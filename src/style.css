@@ -1,0 +1,23 @@
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf6ff;
+  color: #1a3c5e;
+}
+
+#app {
+  text-align: center;
+  padding: 2rem;
+}
