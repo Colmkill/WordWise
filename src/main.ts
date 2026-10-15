@@ -2,7 +2,7 @@ import './style.css';
 import { LEVELS } from './levels';
 import { validateLevels } from './core/validate';
 import type { Level } from './types';
-import { startLevel, attemptGrouping, advanceLevel, requestHint, canRequestHint } from './core/game-state';
+import { startLevel, attemptGrouping, advanceLevel, requestHint } from './core/game-state';
 import type { GameState } from './core/game-state';
 import { Board, type AttemptResult } from './ui/board';
 import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS } from './config';
