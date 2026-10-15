@@ -5,6 +5,22 @@ export interface LevelIssue {
   message: string;
 }
 
+/** Escape characters that have special meaning in regular expressions. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * True when the hint explicitly reveals the category name as whole word(s),
+ * case-insensitively. Substring matches inside longer words (e.g. category
+ * ART vs the word 'smart') are not treated as reveals.
+ */
+export function revealsCategory(hint: string, category: string): boolean {
+  const escaped = escapeRegExp(category.trim());
+  if (!escaped) return false;
+  return new RegExp('\\b' + escaped + '\\b', 'i').test(hint);
+}
+
 /**
  * Structural validation of level data, run before play.
  * Returns all issues found (empty array = valid).
@@ -32,7 +48,7 @@ export function validateLevel(level: Level): LevelIssue[] {
 
     if (!topic.category || !topic.category.trim()) add(`Topic ${topic.id}: missing category name.`);
     if (!topic.hint || !topic.hint.trim()) add(`Topic ${topic.id}: missing hint.`);
-    if (topic.hint && topic.category && topic.hint.toLowerCase().includes(topic.category.toLowerCase())) {
+    if (topic.hint && topic.category && revealsCategory(topic.hint, topic.category)) {
       add(`Topic ${topic.id}: hint reveals the category name.`);
     }
     if (!Array.isArray(topic.words) || topic.words.length < 2) {

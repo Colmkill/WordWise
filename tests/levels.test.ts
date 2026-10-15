@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateLevel, validateLevels } from '../src/core/validate';
+import { validateLevel, validateLevels, revealsCategory } from '../src/core/validate';
 import { LEVELS } from '../src/levels';
 import type { Level } from '../src/types';
 
@@ -7,8 +7,8 @@ const baseLevel = (): Level => ({
   id: 1,
   mistakeThreshold: 3,
   topics: [
-    { id: 'a', category: 'ALPHA', words: ['one', 'two', 'three'], hint: 'A hint about alpha.' },
-    { id: 'b', category: 'BETA', words: ['four', 'five', 'six'], hint: 'A hint about beta.' }
+    { id: 'a', category: 'ALPHA', words: ['one', 'two', 'three'], hint: 'A clue for the first group.' },
+    { id: 'b', category: 'BETA', words: ['four', 'five', 'six'], hint: 'A clue for the second group.' }
   ]
 });
 
@@ -63,6 +63,30 @@ describe('validateLevel', () => {
     const level = baseLevel();
     level.topics[1].id = 'a';
     expect(validateLevel(level).some((i) => i.message.includes('Duplicate topic id'))).toBe(true);
+  });
+});
+
+describe('revealsCategory', () => {
+  it('rejects a hint explicitly containing its category name', () => {
+    expect(revealsCategory('Think ALPHA things.', 'ALPHA')).toBe(true);
+  });
+
+  it('matches the category name case-insensitively', () => {
+    expect(revealsCategory('These are all furniture.', 'FURNITURE')).toBe(true);
+  });
+
+  it('does not match a short category inside an unrelated longer word', () => {
+    expect(revealsCategory('A smart gadget for parties.', 'ART')).toBe(false);
+  });
+
+  it('handles multiword category names', () => {
+    expect(revealsCategory('They are water sports gear.', 'WATER SPORTS')).toBe(true);
+    expect(revealsCategory('Nothing to do with the category.', 'WATER SPORTS')).toBe(false);
+  });
+
+  it('matches category words at hint boundaries', () => {
+    expect(revealsCategory('Weather is what it is.', 'WEATHER')).toBe(true);
+    expect(revealsCategory('The weather outside.', 'WEATHER')).toBe(true);
   });
 });
 
