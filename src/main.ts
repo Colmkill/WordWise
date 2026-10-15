@@ -5,7 +5,10 @@ import type { Level } from './types';
 import { startLevel, attemptGrouping, advanceLevel, requestHint } from './core/game-state';
 import type { GameState } from './core/game-state';
 import { Board, type AttemptResult } from './ui/board';
-import { loadSettings, saveSettings, showModal, type Settings } from './ui/menus';
+import { loadSettings, saveSettings } from './ui/menus';
+import { showModal, type Settings } from './ui/menus';
+import { loadCheckpoint, saveCheckpoint, clearCheckpoint, checkpointFrom } from './ui/save';
+import { startReplay } from './ui/flow';
 import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS } from './config';
 
 // Validate all level data before play (fails fast in dev).
@@ -13,49 +16,287 @@ validateLevels(LEVELS);
 
 const app = document.querySelector<HTMLElement>('#app')!;
 
-app.innerHTML = `
-  <header class="topbar">
-    <span id="hud-level">Level 1</span>
-    <span id="hud-topics">Topics: 0</span>
-    <span id="hud-mistakes">Mistakes: 0/3</span>
-    <span id="hud-lives">Lives: ♥♥♥</span>
-    <button id="btn-hint" class="btn">Hint</button>
-    <button id="btn-menu" class="btn">Menu</button>
-  </header>
-  <main id="board" aria-label="Word bubbles play area"></main>
-`;
+let settings: Settings = loadSettings();
+let checkpoint = loadCheckpoint();
+let storageWarned = false;
 
-const boardEl = document.querySelector<HTMLElement>('#board')!;
-const hudLevel = document.querySelector<HTMLElement>('#hud-level')!;
-const hudTopics = document.querySelector<HTMLElement>('#hud-topics')!;
-const hudMistakes = document.querySelector<HTMLElement>('#hud-mistakes')!;
-const hudLives = document.querySelector<HTMLElement>('#hud-lives')!;
-const hintBtn = document.querySelector<HTMLButtonElement>('#btn-hint')!;
-const menuBtn = document.querySelector<HTMLButtonElement>('#btn-menu')!;
-
-// --- Game state ------------------------------------------------------------
-
+/** True when the current game is a Level Select replay. */
+let replay = false;
 let levelIndex = 0;
-let state: GameState = startLevel(LEVELS[levelIndex]);
+let state: GameState = startLevel(LEVELS[0]);
 let advancing = false;
 let hintSelecting = false;
 let revealing = new Set<number>();
-let settings: Settings = loadSettings();
+let paused = false;
 
 const currentLevel = (): Level => LEVELS[levelIndex];
 
+// --- Screens ----------------------------------------------------------------
+
+function buildShell() {
+  app.innerHTML = `
+    <div id="screen"></div>
+  `;
+}
+
+const screen = () => document.querySelector<HTMLElement>('#screen')!;
+
+/** Main menu screen. */
+function showMainMenu() {
+  replay = false;
+  paused = false;
+  const hasSave = checkpoint !== null && (checkpoint.completedLevels.length > 0 || checkpoint.highestUnlocked > 1);
+  screen().innerHTML = `
+    <div class="menu-screen">
+      <h1>WordWise</h1>
+      <div class="menu-buttons">
+        ${hasSave ? '<button class="btn" id="mm-continue">Continue</button>' : ''}
+        <button class="btn" id="mm-play">Play</button>
+        <button class="btn" id="mm-howto">How to Play</button>
+        ${hasSave ? '<button class="btn" id="mm-new">New Game</button>' : ''}
+        <button class="btn" id="mm-levels">Level Select</button>
+        <button class="btn" id="mm-settings">Settings</button>
+      </div>
+    </div>
+  `;
+
+  screen().querySelector('#mm-play')!.addEventListener('click', () => {
+    startTutorialIfNeeded(() => startGame(0, 3));
+  });
+  const cont = screen().querySelector('#mm-continue');
+  if (cont) {
+    cont.addEventListener('click', () => {
+      // Resume at highest unlocked with checkpoint lives.
+      const idx = Math.max(0, Math.min(checkpoint!.highestUnlocked, LEVELS.length) - 1);
+      startGame(idx, checkpoint!.lives);
+    });
+  }
+  const newGame = screen().querySelector('#mm-new');
+  if (newGame) {
+    newGame.addEventListener('click', () => {
+      const overlay = showConfirm(
+        'New Game?',
+        'Current-run progress will reset. Previously unlocked levels remain available.',
+        'New Game',
+        () => {
+          overlay.remove();
+          clearCheckpoint();
+          checkpoint = null;
+          startGame(0, 3);
+        }
+      );
+    });
+  }
+  screen().querySelector('#mm-howto')!.addEventListener('click', showHowToPlay);
+  screen().querySelector('#mm-levels')!.addEventListener('click', showLevelSelect);
+  screen().querySelector('#mm-settings')!.addEventListener('click', () => showSettingsPanel());
+}
+
+function showHowToPlay() {
+  screen().innerHTML = `
+    <div class="menu-screen">
+      <h2>How to Play</h2>
+      <div class="howto">
+        <p><b>Drag</b> one word bubble onto another to try grouping them.</p>
+        <p>Wait through the short scramble — <b>same-topic words merge</b> and show mixed letters.</p>
+        <p>Merge every word of a topic to <b>reveal its hidden category</b>.</p>
+        <p>Wrong pairs flash red and count as <b>mistakes</b>. Too many mistakes cost a <b>life</b> and restart the level.</p>
+        <p>Lose all three lives and the run ends. <b>Hints</b>: one per topic per level.</p>
+      </div>
+      <div class="menu-buttons"><button class="btn" id="ht-back">Back</button></div>
+    </div>
+  `;
+  screen().querySelector('#ht-back')!.addEventListener('click', showMainMenu);
+}
+
+function showLevelSelect() {
+  const highest = Math.min(checkpoint?.highestUnlocked ?? 1, LEVELS.length);
+  screen().innerHTML = `
+    <div class="menu-screen">
+      <h2>Level Select</h2>
+      <div class="level-grid">
+        ${LEVELS.map(
+          (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
+            ${l.id}. ${l.id <= highest ? (checkpoint!.completedLevels.includes(l.id) ? '✓ ' : '') : '🔒'}
+          </button>`
+        ).join('')}
+      </div>
+      <div class="menu-buttons"><button class="btn" id="ls-back">Back</button></div>
+    </div>
+  `;
+  screen().querySelectorAll<HTMLButtonElement>('.level-btn:not(.locked)').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      replay = true;
+      levelIndex = LEVELS.findIndex((l) => l.id === id);
+      state = startReplay(id);
+      showGameScreen();
+    });
+  });
+  screen().querySelector('#ls-back')!.addEventListener('click', showMainMenu);
+}
+
+/** Settings overlay usable from the main menu. */
+function showSettingsPanel(onBack?: () => void) {
+  const overlay = showModal(`
+    <h2>Settings</h2>
+    <label class="setting"><input type="checkbox" id="sp-sound" ${settings.sound ? 'checked' : ''}/> Sound</label>
+    <label class="setting"><input type="checkbox" id="sp-motion" ${settings.reducedMotion ? 'checked' : ''}/> Reduced motion</label>
+    <div class="menu-buttons"><button class="btn" id="sp-back">Back</button></div>
+  `);
+  overlay.querySelector('#sp-sound')!.addEventListener('change', (e) => {
+    settings = { ...settings, sound: (e.target as HTMLInputElement).checked };
+    if (!saveSettings(settings)) warnStorage();
+  });
+  overlay.querySelector('#sp-motion')!.addEventListener('change', (e) => {
+    settings = { ...settings, reducedMotion: (e.target as HTMLInputElement).checked };
+    if (!saveSettings(settings)) warnStorage();
+  });
+  overlay.querySelector('#sp-back')!.addEventListener('click', () => {
+    overlay.remove();
+    if (onBack) onBack();
+  });
+}
+
+function warnStorage() {
+  if (storageWarned) return;
+  storageWarned = true;
+  const note = document.createElement('div');
+  note.className = 'storage-note';
+  note.textContent = '⚠ Browser storage unavailable — progress may not be saved.';
+  app.appendChild(note);
+  setTimeout(() => note.remove(), 6000);
+}
+
+function showConfirm(
+  title: string,
+  body: string,
+  confirmLabel: string,
+  onConfirm: () => void,
+  onCancel?: () => void
+): HTMLElement {
+  const overlay = showModal(`
+    <h2>${title}</h2>
+    <p>${body}</p>
+    <div class="menu-buttons">
+      <button class="btn" id="cf-yes">${confirmLabel}</button>
+      <button class="btn" id="cf-no">Cancel</button>
+    </div>
+  `);
+  overlay.querySelector('#cf-yes')!.addEventListener('click', () => {
+    overlay.remove();
+    onConfirm();
+  });
+  overlay.querySelector('#cf-no')!.addEventListener('click', () => {
+    overlay.remove();
+    if (onCancel) onCancel();
+  });
+  return overlay;
+}
+
+// --- First-visit tutorial -----------------------------------------------------
+
+function startTutorialIfNeeded(onDone: () => void) {
+  if (checkpoint?.tutorialDone) {
+    onDone();
+    return;
+  }
+  // Mark tutorial done so it only appears on first visit.
+  if (checkpoint) {
+    checkpoint = { ...checkpoint, tutorialDone: true };
+  } else {
+    checkpoint = { completedLevels: [], highestUnlocked: 1, lives: 3, tutorialDone: true };
+  }
+  if (!saveCheckpoint(checkpoint)) warnStorage();
+
+  // A tiny guided demonstration: two guaranteed words on screen.
+  screen().innerHTML = `
+    <div class="menu-screen">
+      <h2>Welcome to WordWise!</h2>
+      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them — correct groups reveal hidden categories.</p>
+      <div id="t-board" class="tutorial-board"></div>
+      <p class="tutorial-hint">In the real game, wrong matches cost mistakes. Here, just practise the drag.</p>
+      <div class="menu-buttons"><button class="btn" id="t-skip">Skip to Level 1</button></div>
+    </div>
+  `;
+
+  const tBoard = new Board(document.querySelector<HTMLElement>('#t-board')!);
+  const demo: GameState = {
+    levelId: 0,
+    mistakeThreshold: 99,
+    mistakes: 0,
+    lives: 3,
+    hintsUsed: [],
+    bubbles: [
+      { id: 1, words: ['one'], topicId: 'demo' },
+      { id: 2, words: ['two'], topicId: 'demo' }
+    ],
+    completedTopics: [],
+    status: 'playing'
+  };
+  tBoard.render(demo);
+  tBoard.onAttempt = async (): Promise<AttemptResult> => {
+    screen().innerHTML = `
+      <div class="menu-screen">
+        <h2>Perfect! 🎉</h2>
+        <p>Words in the same hidden group merge, mix their letters, and finally reveal the category name.</p>
+        <div class="menu-buttons"><button class="btn" id="t-next">Start Level 1</button></div>
+      </div>
+    `;
+    screen().querySelector('#t-next')!.addEventListener('click', onDone);
+    return 'correct';
+  };
+  screen().querySelector('#t-skip')!.addEventListener('click', onDone);
+}
+
+// --- Game screen ---------------------------------------------------------------
+
+function startGame(idx: number, lives: number) {
+  replay = false;
+  levelIndex = idx;
+  state = startLevel(LEVELS[idx], lives);
+  showGameScreen();
+}
+
+function showGameScreen() {
+  screen().innerHTML = `
+    <header class="topbar">
+      <span id="hud-level">Level 1</span>
+      <span id="hud-topics">Topics: 0</span>
+      <span id="hud-mistakes">Mistakes: 0/3</span>
+      <span id="hud-lives">Lives: ♥♥♥</span>
+      ${replay ? '<span class="replay-tag">Replay</span>' : ''}
+      <button id="btn-hint" class="btn">Hint</button>
+      <button id="btn-menu" class="btn">Menu</button>
+    </header>
+    <main id="board" aria-label="Word bubbles play area"></main>
+  `;
+  buildBoardAndWire();
+  render();
+}
+
+const boardEl = () => document.querySelector<HTMLElement>('#board')!;
+const hudLevel = () => document.querySelector<HTMLElement>('#hud-level')!;
+const hudTopics = () => document.querySelector<HTMLElement>('#hud-topics')!;
+const hudMistakes = () => document.querySelector<HTMLElement>('#hud-mistakes')!;
+const hudLives = () => document.querySelector<HTMLElement>('#hud-lives')!;
+const hintBtn = () => document.querySelector<HTMLButtonElement>('#btn-hint')!;
+const menuBtn = () => document.querySelector<HTMLButtonElement>('#btn-menu')!;
+
+let board: Board;
+
 function updateHud(s: GameState) {
   const level = currentLevel();
-  hudLevel.textContent = `Level ${s.levelId}`;
+  hudLevel().textContent = `Level ${s.levelId}`;
   const remaining = level.topics.length - s.completedTopics.length;
-  hudTopics.textContent = `Topics: ${remaining}`;
-  hudMistakes.textContent = `Mistakes: ${s.mistakes}/${s.mistakeThreshold}`;
-  hudLives.textContent = `Lives: ${'♥'.repeat(s.lives)}${'♡'.repeat(Math.max(0, 3 - s.lives))}`;
+  hudTopics().textContent = `Topics: ${remaining}`;
+  hudMistakes().textContent = `Mistakes: ${s.mistakes}/${s.mistakeThreshold}`;
+  hudLives().textContent = `Lives: ${'♥'.repeat(s.lives)}${'♡'.repeat(Math.max(0, 3 - s.lives))}`;
   const hintAvailable =
     s.status === 'playing' &&
     level.topics.some((t) => !s.completedTopics.includes(t.id) && !s.hintsUsed.includes(t.id));
-  hintBtn.disabled = !hintAvailable;
-  hintBtn.textContent = hintSelecting ? 'Cancel' : 'Hint';
+  hintBtn().disabled = !hintAvailable;
+  hintBtn().textContent = hintSelecting ? 'Cancel' : 'Hint';
 }
 
 function render() {
@@ -63,61 +304,102 @@ function render() {
   updateHud(state);
 }
 
-// --- Board wiring ----------------------------------------------------------
+function buildBoardAndWire() {
+  board = new Board(boardEl());
+  board.onRender = updateHud;
 
-const board = new Board(boardEl);
-board.onRender = updateHud;
+  board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
+    const outcome = attemptGrouping(state, currentLevel(), a, b);
+    const prevState = state;
+    state = outcome.state;
 
-board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
-  const outcome = attemptGrouping(state, currentLevel(), a, b);
-  const prevState = state;
-  state = outcome.state;
-
-  if (outcome.kind === 'correct') {
-    const prevRemaining = prevState.completedTopics.length;
-    const newRemaining = state.completedTopics.length;
-    if (newRemaining > prevRemaining) {
-      // A topic completed: the merged bubble left the state, but its DOM
-      // element still exists. Find it in the PREVIOUS state (not the new one).
-      const completedTopicId = state.completedTopics[newRemaining - 1];
-      const topic = currentLevel().topics.find((t) => t.id === completedTopicId)!;
-      const merged = prevState.bubbles.find((bb) => bb.topicId === completedTopicId)!;
-      if (!revealing.has(merged.id)) {
-        revealing.add(merged.id);
-        // Update the HUD only; a full render would remove the revealing bubble.
-        updateHud(state);
-        board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
-          revealing.delete(merged.id);
-          render();
-          checkLevelComplete();
-        });
+    if (outcome.kind === 'correct') {
+      const prevRemaining = prevState.completedTopics.length;
+      const newRemaining = state.completedTopics.length;
+      if (newRemaining > prevRemaining) {
+        const completedTopicId = state.completedTopics[newRemaining - 1];
+        const topic = currentLevel().topics.find((t) => t.id === completedTopicId)!;
+        const merged = prevState.bubbles.find((bb) => bb.topicId === completedTopicId)!;
+        if (!revealing.has(merged.id)) {
+          revealing.add(merged.id);
+          updateHud(state);
+          board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
+            revealing.delete(merged.id);
+            render();
+            checkLevelComplete();
+          });
+        }
+      } else {
+        setTimeout(render, 0);
       }
-    } else {
-      setTimeout(render, 0);
+      if (state.status === 'gameOver') {
+        setTimeout(showGameOver, 700);
+      }
+      return 'correct';
     }
-    if (state.status === 'gameOver') {
-      setTimeout(showGameOver, 700);
-    }
-    return 'correct';
-  }
 
-  if (outcome.kind === 'incorrect') {
-    if (state.status === 'gameOver') {
-      setTimeout(showGameOver, 700);
-    } else {
-      setTimeout(render, 0);
+    if (outcome.kind === 'incorrect') {
+      if (state.status === 'gameOver') {
+        setTimeout(showGameOver, 700);
+      } else {
+        setTimeout(render, 0);
+      }
+      return 'incorrect';
     }
-    return 'incorrect';
-  }
 
-  return 'invalid';
-};
+    return 'invalid';
+  };
+
+  hintBtn().addEventListener('click', () => {
+    if (paused) return;
+    hintSelecting = !hintSelecting;
+    board.setHintMode(hintSelecting);
+    updateHud(state);
+  });
+
+  board.onHintSelect = (bubbleId: number) => {
+    if (!hintSelecting) return;
+    hintSelecting = false;
+    board.setHintMode(false);
+    const outcome = requestHint(state, currentLevel(), bubbleId);
+    state = outcome.state;
+    if (outcome.hint) {
+      board.showHint(bubbleId, outcome.hint);
+    }
+    updateHud(state);
+  };
+
+  boardEl().addEventListener('pointerdown', (e) => {
+    if (hintSelecting && (e.target as HTMLElement) === boardEl()) {
+      hintSelecting = false;
+      board.setHintMode(false);
+      updateHud(state);
+    }
+  });
+
+  menuBtn().addEventListener('click', openGameMenu);
+}
 
 function checkLevelComplete() {
   if (state.status !== 'levelComplete' || advancing) return;
   advancing = true;
   setTimeout(() => {
     advancing = false;
+    // Save the completed-level checkpoint (main run only).
+    if (!replay) {
+      const cp = checkpointFrom(state, LEVELS.length);
+      if (saveCheckpoint(cp)) {
+        checkpoint = loadCheckpoint();
+      } else {
+        warnStorage();
+      }
+    }
+    if (replay) {
+      // Replay: celebrate then return to Level Select.
+      celebrate(`Level ${state.levelId} Complete! 🎉`);
+      setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
+      return;
+    }
     const next = advanceLevel(state, LEVELS);
     if (next.status === 'runComplete') {
       showRunComplete();
@@ -126,52 +408,20 @@ function checkLevelComplete() {
     board.invalidatePending();
     state = next;
     levelIndex = LEVELS.findIndex((l) => l.id === state.levelId);
-    celebrate();
+    celebrate(`Level ${state.levelId - 1} Complete! 🎉`);
     render();
   }, LEVEL_COMPLETE_PAUSE_MS);
 }
 
-function celebrate() {
+function celebrate(text: string) {
   const el = document.createElement('div');
   el.className = 'celebration';
-  const completedNumber = state.levelId > 1 ? state.levelId - 1 : 1;
-  el.textContent = `Level ${completedNumber} Complete! 🎉`;
+  el.textContent = text;
   app.appendChild(el);
   setTimeout(() => el.remove(), LEVEL_COMPLETE_PAUSE_MS);
 }
 
-// --- Hints -----------------------------------------------------------------
-
-hintBtn.addEventListener('click', () => {
-  if (paused) return;
-  hintSelecting = !hintSelecting;
-  board.setHintMode(hintSelecting);
-  updateHud(state);
-});
-
-board.onHintSelect = (bubbleId: number) => {
-  if (!hintSelecting) return;
-  hintSelecting = false;
-  board.setHintMode(false);
-  const outcome = requestHint(state, currentLevel(), bubbleId);
-  state = outcome.state;
-  if (outcome.hint) {
-    board.showHint(bubbleId, outcome.hint);
-  }
-  updateHud(state);
-};
-
-boardEl.addEventListener('pointerdown', (e) => {
-  if (hintSelecting && (e.target as HTMLElement) === boardEl) {
-    hintSelecting = false;
-    board.setHintMode(false);
-    updateHud(state);
-  }
-});
-
-// --- Pause, gameplay menu, focus loss ---------------------------------------
-
-let paused = false;
+// --- Pause & gameplay menu (game screen only) ---------------------------------
 
 function setPaused(next: boolean) {
   if (paused === next) return;
@@ -187,13 +437,6 @@ function setPaused(next: boolean) {
   }
 }
 
-/** The gameplay menu contents. Assumes the game is already paused. */
-function showGameMenu() {
-  const overlay = showModal('');
-  menuView(overlay);
-}
-
-/** Render the main menu buttons into an overlay and bind handlers. */
 function menuView(overlay: HTMLElement) {
   overlay.innerHTML = `
     <div class="panel">
@@ -206,18 +449,22 @@ function menuView(overlay: HTMLElement) {
       </div>
     </div>
   `;
-
   overlay.querySelector('#m-close')!.addEventListener('click', () => {
     overlay.remove();
     setPaused(false);
   });
-
   overlay.querySelector('#m-settings')!.addEventListener('click', () => {
-    settingsView(overlay);
+    overlay.remove();
+    setPaused(false);
+    showSettingsPanel(() => {
+      // Return to the game after settings.
+      if (!paused) setPaused(true);
+      const o = showModal('');
+      menuView(o);
+    });
   });
-
   overlay.querySelector('#m-restart')!.addEventListener('click', () => {
-    confirmView(
+    showConfirmInOverlay(
       overlay,
       'Restart Level?',
       'Current-level progress will be lost. The level restarts with a fresh arrangement.',
@@ -225,55 +472,33 @@ function menuView(overlay: HTMLElement) {
       () => {
         overlay.remove();
         board.invalidatePending();
-        state = startLevel(currentLevel(), state.lives);
+        state = replay ? startReplay(currentLevel().id) : startLevel(currentLevel(), state.lives);
         render();
         setPaused(false);
       }
     );
   });
-
   overlay.querySelector('#m-main')!.addEventListener('click', () => {
-    confirmView(
+    showConfirmInOverlay(
       overlay,
       'Return to Menu?',
       'Unfinished level progress will be lost. The level will restart with a fresh arrangement if played again.',
       'Return to Menu',
       () => {
         overlay.remove();
-        // The main menu arrives in Phase 6b; for now start a fresh run.
-        board.invalidatePending();
-        levelIndex = 0;
-        state = startLevel(LEVELS[0]);
-        render();
         setPaused(false);
+        // Completed levels, unlocks and the checkpoint stay protected.
+        if (replay) {
+          showLevelSelect();
+        } else {
+          showMainMenu();
+        }
       }
     );
   });
 }
 
-/** Render the settings panel into an existing overlay. */
-function settingsView(overlay: HTMLElement) {
-  overlay.innerHTML = `
-    <div class="panel">
-      <h2>Settings</h2>
-      <label class="setting"><input type="checkbox" id="s-sound" ${settings.sound ? 'checked' : ''}/> Sound</label>
-      <label class="setting"><input type="checkbox" id="s-motion" ${settings.reducedMotion ? 'checked' : ''}/> Reduced motion</label>
-      <div class="menu-buttons"><button class="btn" id="s-back">Back</button></div>
-    </div>
-  `;
-  overlay.querySelector('#s-sound')!.addEventListener('change', (e) => {
-    settings = { ...settings, sound: (e.target as HTMLInputElement).checked };
-    saveSettings(settings);
-  });
-  overlay.querySelector('#s-motion')!.addEventListener('change', (e) => {
-    settings = { ...settings, reducedMotion: (e.target as HTMLInputElement).checked };
-    saveSettings(settings);
-  });
-  overlay.querySelector('#s-back')!.addEventListener('click', () => menuView(overlay));
-}
-
-/** Render a confirmation panel into an existing overlay. */
-function confirmView(
+function showConfirmInOverlay(
   overlay: HTMLElement,
   title: string,
   body: string,
@@ -294,16 +519,24 @@ function confirmView(
   overlay.querySelector('#c-yes')!.addEventListener('click', onConfirm);
 }
 
-/** Open the gameplay menu from the top bar. */
 function openGameMenu() {
-  if (paused) return; // already paused by a menu or focus loss
+  if (paused) return;
   setPaused(true);
-  showGameMenu();
+  const overlay = showModal('');
+  menuView(overlay);
 }
 
-menuBtn.addEventListener('click', openGameMenu);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && inGame()) pauseForFocusLoss();
+});
+window.addEventListener('blur', () => {
+  if (inGame()) pauseForFocusLoss();
+});
 
-/** Focus loss: pause and require an explicit Resume. */
+function inGame(): boolean {
+  return document.querySelector('#board') !== null && !paused;
+}
+
 function pauseForFocusLoss() {
   if (paused) return;
   setPaused(true);
@@ -317,39 +550,39 @@ function pauseForFocusLoss() {
   });
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pauseForFocusLoss();
-});
-window.addEventListener('blur', () => pauseForFocusLoss());
-
 // --- End states ------------------------------------------------------------
 
 function showGameOver() {
   const overlay = showModal(`
     <h2>Game Over</h2>
-    <div class="menu-buttons"><button class="btn" id="btn-new-run">New Run</button></div>
+    <div class="menu-buttons">
+      <button class="btn" id="btn-new-run">New Run</button>
+      <button class="btn" id="btn-main">Main Menu</button>
+    </div>
   `);
   overlay.querySelector('#btn-new-run')!.addEventListener('click', () => {
     overlay.remove();
     board.invalidatePending();
-    levelIndex = 0;
-    state = startLevel(LEVELS[0]);
-    render();
+    startGame(0, 3); // checkpoint (unlocked levels) remains protected
+  });
+  overlay.querySelector('#btn-main')!.addEventListener('click', () => {
+    overlay.remove();
+    showMainMenu();
   });
 }
 
 function showRunComplete() {
   const overlay = showModal(`
-    <h2>All levels complete!</h2>
-    <div class="menu-buttons"><button class="btn" id="btn-again">Play Again</button></div>
+    <h2>All levels complete! 🎉</h2>
+    <div class="menu-buttons"><button class="btn" id="btn-main">Main Menu</button></div>
   `);
-  overlay.querySelector('#btn-again')!.addEventListener('click', () => {
+  overlay.querySelector('#btn-main')!.addEventListener('click', () => {
     overlay.remove();
-    board.invalidatePending();
-    levelIndex = 0;
-    state = startLevel(LEVELS[0]);
-    render();
+    showMainMenu();
   });
 }
 
-render();
+// --- Boot --------------------------------------------------------------------
+
+buildShell();
+showMainMenu();
