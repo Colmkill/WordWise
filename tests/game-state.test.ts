@@ -35,13 +35,14 @@ describe('startLevel', () => {
 
 describe('attemptGrouping', () => {
   it('merges a correct individual pair and preserves identities', () => {
+    // Fruit has three words, so this merge completes no topic yet.
     const s = startLevel(level());
-    const r = attemptGrouping(s, level(), findWord(s, 'chair').id, findWord(s, 'table').id);
+    const r = attemptGrouping(s, level(), findWord(s, 'apple').id, findWord(s, 'banana').id);
     expect(r.kind).toBe('correct');
     if (r.kind !== 'correct') return;
     expect(r.state.bubbles).toHaveLength(4);
-    const merged = r.state.bubbles.find((b) => b.topicId === 'furniture')!;
-    expect(merged.words).toEqual(['chair', 'table']);
+    const merged = r.state.bubbles.find((b) => b.topicId === 'fruit')!;
+    expect(merged.words).toEqual(['apple', 'banana']);
   });
 
   it('completes the topic when the last word is added to a merged group', () => {
@@ -69,14 +70,16 @@ describe('attemptGrouping', () => {
 
   it('does not destroy a correct merged group on a later incorrect attempt', () => {
     const s = startLevel(level());
-    const ok = attemptGrouping(s, level(), findWord(s, 'chair').id, findWord(s, 'table').id);
+    // Merge two of three fruit words (topic not yet complete).
+    const ok = attemptGrouping(s, level(), findWord(s, 'apple').id, findWord(s, 'banana').id);
     if (ok.kind !== 'correct') throw new Error('expected correct');
-    const mergedId = ok.state.bubbles.find((b) => b.topicId === 'furniture')!.id;
-    const bad = attemptGrouping(ok.state, level(), mergedId, findWord(ok.state, 'apple').id);
+    const mergedId = ok.state.bubbles.find((b) => b.topicId === 'fruit')!.id;
+    // Incorrect attempt: merged fruit group onto a furniture word.
+    const bad = attemptGrouping(ok.state, level(), mergedId, findWord(ok.state, 'chair').id);
     expect(bad.kind).toBe('incorrect');
     if (bad.kind !== 'incorrect') return;
-    const stillMerged = bad.state.bubbles.find((b) => b.topicId === 'furniture');
-    expect(stillMerged?.words).toEqual(['chair', 'table']);
+    const stillMerged = bad.state.bubbles.find((b) => b.topicId === 'fruit');
+    expect(stillMerged?.words).toEqual(['apple', 'banana']);
     expect(bad.state.mistakes).toBe(1);
   });
 
