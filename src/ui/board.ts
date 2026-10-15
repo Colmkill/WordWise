@@ -22,10 +22,13 @@ export class Board {
   private container: HTMLElement;
   private positions = new Map<number, Position>();
   private locked = false;
+  private hintMode = false;
   /** Called to validate a drop; the board awaits the result for feedback. */
   onAttempt: (a: number, b: number) => Promise<AttemptResult> = async () => 'invalid';
   /** Called after the state has changed (for HUD updates). */
   onRender: (state: GameState) => void = () => {};
+  /** Called when the player taps a bubble in hint mode. */
+  onHintSelect: (bubbleId: number) => void = () => {};
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -35,6 +38,12 @@ export class Board {
   setLocked(locked: boolean) {
     this.locked = locked;
     this.container.classList.toggle('locked', locked);
+  }
+
+  /** Enter/exit hint-selection mode. */
+  setHintMode(active: boolean) {
+    this.hintMode = active;
+    this.container.classList.toggle('hint-mode', active);
   }
 
   /** Render the current state, preserving positions of existing bubbles. */
@@ -65,6 +74,66 @@ export class Board {
 
     this.relax(state);
     this.onRender(state);
+  }
+
+  /**
+   * Show a completed topic's category inside its bubble, then float it offscreen.
+   * Returns a promise that resolves when the bubble is fully removed.
+   */
+  async revealCategory(bubbleId: number, category: string, revealMs: number): Promise<void> {
+    const el = this.bubbleEl(bubbleId);
+    if (!el) return;
+    el.classList.add('revealing');
+    el.textContent = category;
+    await new Promise((resolve) => setTimeout(resolve, revealMs));
+    el.classList.add('float-off');
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    el.remove();
+  }
+
+  /** Show a hint in a speech bubble above the given word bubble; auto-dismiss. */
+  showHint(bubbleId: number, hint: string, dismissMs = 4000) {
+    this.hideHint();
+    const el = this.bubbleEl(bubbleId);
+    if (!el) return;
+    const tip = document.createElement('div');
+    tip.className = 'hint-tip';
+    tip.textContent = hint;
+    this.container.appendChild(tip);
+
+    const place = () => {
+      const r = el.getBoundingClientRect();
+      const br = this.container.getBoundingClientRect();
+      const width = tip.offsetWidth;
+      const height = tip.offsetHeight;
+      // Prefer above the bubble; flip below if there is not enough room.
+      let top = r.top - br.top - height - 10;
+      if (top < 8) top = r.bottom - br.top + 10;
+      let left = r.left - br.left + r.width / 2 - width / 2;
+      // Keep it fully readable and inside the board.
+      left = Math.max(8, Math.min(left, br.width - width - 8));
+      tip.style.top = `${top}px`;
+      tip.style.left = `${left}px`;
+    };
+
+    requestAnimationFrame(place);
+    // Recheck placement once fonts/layout settle.
+    setTimeout(place, 60);
+
+    const dismiss = () => {
+      tip.remove();
+      document.removeEventListener('pointerdown', onDocDown, true);
+      clearTimeout(timer);
+    };
+    const onDocDown = (e: Event) => {
+      if (!tip.contains(e.target as Node) && e.target !== el) dismiss();
+    };
+    document.addEventListener('pointerdown', onDocDown, true);
+    const timer = setTimeout(dismiss, dismissMs);
+  }
+
+  hideHint() {
+    this.container.querySelectorAll('.hint-tip').forEach((t) => t.remove());
   }
 
   private bubbleEl(id: number): HTMLElement | null {
@@ -125,11 +194,17 @@ export class Board {
   private attachDrag(el: HTMLElement, id: number) {
     el.addEventListener('pointerdown', (e: PointerEvent) => {
       if (this.locked) return;
+
+      if (this.hintMode) {
+        // Tap in hint mode: select this bubble for a hint, no dragging.
+        e.preventDefault();
+        this.onHintSelect(id);
+        return;
+      }
+
       e.preventDefault(); // blocks text selection and touch scroll on the bubble
       el.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
-      el.style.setProperty('--grab-x', `${e.offsetX}px`);
-      el.style.setProperty('--grab-y', `${e.offsetY}px`);
       const startX = e.clientX;
       const startY = e.clientY;
       const pos = { ...this.ensurePosition(id) };
@@ -198,7 +273,6 @@ export class Board {
     a.classList.add('selected');
     b.classList.add('selected');
     this.setLocked(true);
-    // Scrambling visual during the suspense delay.
     const scrambleTimer = window.setInterval(() => {
       for (const el of [a, b]) {
         if (el.classList.contains('selected')) {
