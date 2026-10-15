@@ -132,10 +132,7 @@ describe('mistakes, lives and level reset', () => {
   });
 
   it('newRun resets to level 1 with full lives', () => {
-    const lvl = level();
-    let s = startLevel(lvl, 1);
-    s = { ...s, levelId: 2 };
-    const fresh = newRun([lvl]);
+    const fresh = newRun([level()]);
     expect(fresh.levelId).toBe(1);
     expect(fresh.lives).toBe(3);
     expect(fresh.mistakes).toBe(0);
@@ -206,8 +203,7 @@ describe('progression', () => {
   });
 
   it('advances to the next level with a fresh arrangement and lives intact', () => {
-    let s = startLevel(level(), 2);
-    s = { ...s, status: 'levelComplete', levelId: 1 };
+    const s = { ...startLevel(level(), 2), status: 'levelComplete' as const, levelId: 1 };
     const next = advanceLevel(s, levels);
     expect(next.levelId).toBe(2);
     expect(next.lives).toBe(2);
@@ -215,8 +211,7 @@ describe('progression', () => {
   });
 
   it('ends the run after the final level', () => {
-    let s = startLevel(levels[1], 2);
-    s = { ...s, status: 'levelComplete' };
+    const s = { ...startLevel(levels[1], 2), status: 'levelComplete' as const };
     expect(advanceLevel(s, levels).status).toBe('runComplete');
   });
 });
