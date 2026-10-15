@@ -14,7 +14,7 @@ npm run build    # type-check + production build
 ## Status
 
 - [x] Phase 1 — project scaffold
-- [ ] Phase 2 — level data format + validation
+- [x] Phase 2 — level data format + validation
 - [ ] Phase 3 — core gameplay state machine
 - [ ] Phase 4 — board UI, drag & drop
 - [ ] Phase 5 — topic completion & progression
