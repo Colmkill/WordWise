@@ -59,7 +59,7 @@ function updateHud(s: GameState) {
 }
 
 function render() {
-  board.render(state);
+  board.render(state, revealing);
   updateHud(state);
 }
 
@@ -69,7 +69,6 @@ const board = new Board(boardEl);
 board.onRender = updateHud;
 
 board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
-  if (paused) return 'invalid';
   const outcome = attemptGrouping(state, currentLevel(), a, b);
   const prevState = state;
   state = outcome.state;
@@ -78,18 +77,20 @@ board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
     const prevRemaining = prevState.completedTopics.length;
     const newRemaining = state.completedTopics.length;
     if (newRemaining > prevRemaining) {
+      // A topic completed: the merged bubble left the state, but its DOM
+      // element still exists. Find it in the PREVIOUS state (not the new one).
       const completedTopicId = state.completedTopics[newRemaining - 1];
       const topic = currentLevel().topics.find((t) => t.id === completedTopicId)!;
-      const completedId = state.bubbles.find((b) => b.topicId === completedTopicId)?.id;
-      if (completedId != null && !revealing.has(completedId)) {
-        revealing.add(completedId);
-        setTimeout(() => {
+      const merged = prevState.bubbles.find((bb) => bb.topicId === completedTopicId)!;
+      if (!revealing.has(merged.id)) {
+        revealing.add(merged.id);
+        // Update the HUD only; a full render would remove the revealing bubble.
+        updateHud(state);
+        board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
+          revealing.delete(merged.id);
           render();
-          board.revealCategory(completedId, topic.category, CATEGORY_REVEAL_MS).finally(() => {
-            revealing.delete(completedId);
-            checkLevelComplete();
-          });
-        }, 600);
+          checkLevelComplete();
+        });
       }
     } else {
       setTimeout(render, 0);
@@ -122,6 +123,7 @@ function checkLevelComplete() {
       showRunComplete();
       return;
     }
+    board.invalidatePending();
     state = next;
     levelIndex = LEVELS.findIndex((l) => l.id === state.levelId);
     celebrate();
@@ -185,19 +187,25 @@ function setPaused(next: boolean) {
   }
 }
 
-/** Compact gameplay menu. */
-function openGameMenu() {
-  if (paused) return;
-  setPaused(true);
-  const overlay = showModal(`
-    <h2>Menu</h2>
-    <div class="menu-buttons">
-      <button class="btn" id="m-settings">Settings</button>
-      <button class="btn" id="m-restart">Restart Level</button>
-      <button class="btn" id="m-main">Main Menu</button>
-      <button class="btn" id="m-close">Close</button>
+/** The gameplay menu contents. Assumes the game is already paused. */
+function showGameMenu() {
+  const overlay = showModal('');
+  menuView(overlay);
+}
+
+/** Render the main menu buttons into an overlay and bind handlers. */
+function menuView(overlay: HTMLElement) {
+  overlay.innerHTML = `
+    <div class="panel">
+      <h2>Menu</h2>
+      <div class="menu-buttons">
+        <button class="btn" id="m-settings">Settings</button>
+        <button class="btn" id="m-restart">Restart Level</button>
+        <button class="btn" id="m-main">Main Menu</button>
+        <button class="btn" id="m-close">Close</button>
+      </div>
     </div>
-  `);
+  `;
 
   overlay.querySelector('#m-close')!.addEventListener('click', () => {
     overlay.remove();
@@ -205,75 +213,92 @@ function openGameMenu() {
   });
 
   overlay.querySelector('#m-settings')!.addEventListener('click', () => {
-    overlay.innerHTML = `
-      <div class="panel">
-        <h2>Settings</h2>
-        <label class="setting"><input type="checkbox" id="s-sound" ${settings.sound ? 'checked' : ''}/> Sound</label>
-        <label class="setting"><input type="checkbox" id="s-motion" ${settings.reducedMotion ? 'checked' : ''}/> Reduced motion</label>
-        <div class="menu-buttons"><button class="btn" id="s-back">Back</button></div>
-      </div>
-    `;
-    overlay.querySelector('#s-sound')!.addEventListener('change', (e) => {
-      settings = { ...settings, sound: (e.target as HTMLInputElement).checked };
-      saveSettings(settings);
-    });
-    overlay.querySelector('#s-motion')!.addEventListener('change', (e) => {
-      settings = { ...settings, reducedMotion: (e.target as HTMLInputElement).checked };
-      saveSettings(settings);
-    });
-    overlay.querySelector('#s-back')!.addEventListener('click', () => {
-      overlay.remove();
-      openGameMenu();
-    });
+    settingsView(overlay);
   });
 
   overlay.querySelector('#m-restart')!.addEventListener('click', () => {
-    overlay.innerHTML = `
-      <div class="panel">
-        <h2>Restart Level?</h2>
-        <p>Current-level progress will be lost. The level restarts with a fresh arrangement.</p>
-        <div class="menu-buttons">
-          <button class="btn" id="r-yes">Restart</button>
-          <button class="btn" id="r-no">Cancel</button>
-        </div>
-      </div>
-    `;
-    overlay.querySelector('#r-no')!.addEventListener('click', () => {
-      overlay.remove();
-      openGameMenu();
-    });
-    overlay.querySelector('#r-yes')!.addEventListener('click', () => {
-      overlay.remove();
-      state = startLevel(currentLevel(), state.lives);
-      render();
-      setPaused(false);
-    });
+    confirmView(
+      overlay,
+      'Restart Level?',
+      'Current-level progress will be lost. The level restarts with a fresh arrangement.',
+      'Restart',
+      () => {
+        overlay.remove();
+        board.invalidatePending();
+        state = startLevel(currentLevel(), state.lives);
+        render();
+        setPaused(false);
+      }
+    );
   });
 
   overlay.querySelector('#m-main')!.addEventListener('click', () => {
-    overlay.innerHTML = `
-      <div class="panel">
-        <h2>Return to Menu?</h2>
-        <p>Unfinished level progress will be lost. The level will restart with a fresh arrangement if played again.</p>
-        <div class="menu-buttons">
-          <button class="btn" id="q-yes">Return to Menu</button>
-          <button class="btn" id="q-no">Cancel</button>
-        </div>
-      </div>
-    `;
-    overlay.querySelector('#q-no')!.addEventListener('click', () => {
-      overlay.remove();
-      openGameMenu();
-    });
-    overlay.querySelector('#q-yes')!.addEventListener('click', () => {
-      overlay.remove();
-      // The main menu arrives in Phase 6b; for now return to a fresh run.
-      levelIndex = 0;
-      state = startLevel(LEVELS[0]);
-      render();
-      setPaused(false);
-    });
+    confirmView(
+      overlay,
+      'Return to Menu?',
+      'Unfinished level progress will be lost. The level will restart with a fresh arrangement if played again.',
+      'Return to Menu',
+      () => {
+        overlay.remove();
+        // The main menu arrives in Phase 6b; for now start a fresh run.
+        board.invalidatePending();
+        levelIndex = 0;
+        state = startLevel(LEVELS[0]);
+        render();
+        setPaused(false);
+      }
+    );
   });
+}
+
+/** Render the settings panel into an existing overlay. */
+function settingsView(overlay: HTMLElement) {
+  overlay.innerHTML = `
+    <div class="panel">
+      <h2>Settings</h2>
+      <label class="setting"><input type="checkbox" id="s-sound" ${settings.sound ? 'checked' : ''}/> Sound</label>
+      <label class="setting"><input type="checkbox" id="s-motion" ${settings.reducedMotion ? 'checked' : ''}/> Reduced motion</label>
+      <div class="menu-buttons"><button class="btn" id="s-back">Back</button></div>
+    </div>
+  `;
+  overlay.querySelector('#s-sound')!.addEventListener('change', (e) => {
+    settings = { ...settings, sound: (e.target as HTMLInputElement).checked };
+    saveSettings(settings);
+  });
+  overlay.querySelector('#s-motion')!.addEventListener('change', (e) => {
+    settings = { ...settings, reducedMotion: (e.target as HTMLInputElement).checked };
+    saveSettings(settings);
+  });
+  overlay.querySelector('#s-back')!.addEventListener('click', () => menuView(overlay));
+}
+
+/** Render a confirmation panel into an existing overlay. */
+function confirmView(
+  overlay: HTMLElement,
+  title: string,
+  body: string,
+  confirmLabel: string,
+  onConfirm: () => void
+) {
+  overlay.innerHTML = `
+    <div class="panel">
+      <h2>${title}</h2>
+      <p>${body}</p>
+      <div class="menu-buttons">
+        <button class="btn" id="c-yes">${confirmLabel}</button>
+        <button class="btn" id="c-no">Cancel</button>
+      </div>
+    </div>
+  `;
+  overlay.querySelector('#c-no')!.addEventListener('click', () => menuView(overlay));
+  overlay.querySelector('#c-yes')!.addEventListener('click', onConfirm);
+}
+
+/** Open the gameplay menu from the top bar. */
+function openGameMenu() {
+  if (paused) return; // already paused by a menu or focus loss
+  setPaused(true);
+  showGameMenu();
 }
 
 menuBtn.addEventListener('click', openGameMenu);
@@ -306,6 +331,7 @@ function showGameOver() {
   `);
   overlay.querySelector('#btn-new-run')!.addEventListener('click', () => {
     overlay.remove();
+    board.invalidatePending();
     levelIndex = 0;
     state = startLevel(LEVELS[0]);
     render();
@@ -319,6 +345,7 @@ function showRunComplete() {
   `);
   overlay.querySelector('#btn-again')!.addEventListener('click', () => {
     overlay.remove();
+    board.invalidatePending();
     levelIndex = 0;
     state = startLevel(LEVELS[0]);
     render();

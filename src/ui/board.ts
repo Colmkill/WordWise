@@ -30,6 +30,9 @@ export class Board {
   private hintMode = false;
   private paused = false;
   private activeDrag: ActiveDrag | null = null;
+  /** Bumped whenever the level state is replaced (restart, new level, new run):
+   *  in-flight validation attempts belonging to the old generation abort. */
+  private generation = 0;
   /** Called to validate a drop; the board awaits the result for feedback. */
   onAttempt: (a: number, b: number) => Promise<AttemptResult> = async () => 'invalid';
   /** Called after the state has changed (for HUD updates). */
@@ -55,7 +58,7 @@ export class Board {
 
   /**
    * Pause/resume gameplay. Pausing cancels any active drag (the bubble returns
-   * to its last stable position) and freezes bubble motion.
+   * to its last stable position) and freezes bubble motion and timers.
    */
   setPaused(paused: boolean) {
     if (paused && !this.paused) {
@@ -69,6 +72,23 @@ export class Board {
     return this.paused;
   }
 
+  /**
+   * Invalidate in-flight validation attempts and unlock the board. Call when
+   * the level state is replaced (restart, next level, new run): any pending
+   * suspense sequence for the old bubbles is discarded instead of resolving
+   * against the fresh state.
+   */
+  invalidatePending() {
+    this.generation++;
+    this.setLocked(false);
+    this.container
+      .querySelectorAll('.bubble')
+      .forEach((el) =>
+        el.classList.remove('selected', 'target', 'scrambling', 'feedback-good', 'feedback-bad')
+      );
+    this.hideHint();
+  }
+
   /** Cancel the in-flight drag: bubble snaps back; no attempt is made. */
   private cancelActiveDrag() {
     if (this.activeDrag) {
@@ -77,11 +97,16 @@ export class Board {
     }
   }
 
-  /** Render the current state, preserving positions of existing bubbles. */
-  render(state: GameState) {
+  /**
+   * Render the current state. Bubbles whose ids are in keepIds (e.g. ones
+   * mid-reveal) are left in the DOM even though they left the state.
+   */
+  render(state: GameState, keepIds?: Set<number>) {
     for (const el of Array.from(this.container.querySelectorAll('.bubble'))) {
       const id = Number((el as HTMLElement).dataset.id);
-      if (!state.bubbles.some((b) => b.id === id)) el.remove();
+      if (state.bubbles.some((b) => b.id === id)) continue;
+      if (keepIds?.has(id)) continue;
+      el.remove();
     }
 
     for (const bubble of state.bubbles) {
@@ -111,9 +136,14 @@ export class Board {
   async revealCategory(bubbleId: number, category: string, revealMs: number): Promise<void> {
     const el = this.bubbleEl(bubbleId);
     if (!el) return;
+    const gen = this.generation;
     el.classList.add('revealing');
     el.textContent = category;
     await this.waitWhilePaused(revealMs);
+    if (gen !== this.generation) {
+      el.remove();
+      return;
+    }
     el.classList.add('float-off');
     await this.waitWhilePaused(700);
     el.remove();
@@ -248,8 +278,8 @@ export class Board {
       el.classList.add('dragging');
       const startX = e.clientX;
       const startY = e.clientY;
-      const pos = { ...this.ensurePosition(id) };
       const stable = this.ensurePosition(id);
+      const pos = { ...stable };
 
       const move = (ev: PointerEvent) => {
         pos.x = stable.x + (ev.clientX - startX);
@@ -283,7 +313,6 @@ export class Board {
         cleanup();
         el.classList.remove('dragging');
         this.container.querySelectorAll('.bubble.target').forEach((t) => t.classList.remove('target'));
-        // Return to the last stable position: no attempt, no penalty.
         this.place(el, stable);
       };
 
@@ -321,6 +350,7 @@ export class Board {
     a.classList.add('selected');
     b.classList.add('selected');
     this.setLocked(true);
+    const gen = this.generation;
     const scrambleTimer = window.setInterval(() => {
       for (const el of [a, b]) {
         if (el.classList.contains('selected')) {
@@ -330,10 +360,21 @@ export class Board {
     }, 120);
     await this.waitWhilePaused(VALIDATION_DELAY_MS);
     window.clearInterval(scrambleTimer);
+    // The level was restarted/replaced during the suspense: discard the attempt.
+    if (gen !== this.generation) {
+      a.classList.remove('selected', 'scrambling');
+      b.classList.remove('selected', 'scrambling');
+      return;
+    }
     a.classList.remove('scrambling');
     b.classList.remove('scrambling');
 
     const result = await this.onAttempt(idA, idB);
+    if (gen !== this.generation) {
+      a.classList.remove('selected', 'feedback-good', 'feedback-bad');
+      b.classList.remove('selected', 'feedback-good', 'feedback-bad');
+      return;
+    }
     if (result === 'correct') {
       a.classList.add('feedback-good');
       b.classList.add('feedback-good');
