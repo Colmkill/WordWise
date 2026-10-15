@@ -7,17 +7,182 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #eaf6ff;
-  color: #1a3c5e;
+  height: 100%;
+  overflow: hidden;
 }
 
 #app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(180deg, #eaf6ff 0%, #fdf3ff 100%);
+  color: #1a3c5e;
+}
+
+/* --- Top bar ------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid rgba(26, 60, 94, 0.15);
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+}
+
+.topbar span {
+  white-space: nowrap;
+}
+
+.btn {
+  font: inherit;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(26, 60, 94, 0.3);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a3c5e;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- Board ---------------------------------------------------------------- */
+
+.board {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  touch-action: pan-y; /* allow page-free vertical scroll; bubbles opt out */
+}
+
+.board.locked {
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  max-width: 14rem;
+  min-height: 5.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #ffffff 0%, #bfe3ff 60%, #8ec9f5 100%);
+  border: 2px solid rgba(26, 60, 94, 0.2);
+  box-shadow: 0 6px 14px rgba(26, 60, 94, 0.18);
+  font-size: clamp(1rem, 4vw, 1.35rem);
+  font-weight: 600;
+  color: #12395e;
   text-align: center;
-  padding: 2rem;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none; /* direct touch dragging, no hold delay, no scroll */
+  cursor: grab;
+  transition: left 0.35s ease-out, top 0.35s ease-out, transform 0.25s ease,
+    background 0.25s ease, box-shadow 0.25s ease;
+  animation: float 6s ease-in-out infinite;
+}
+
+.bubble.dragging {
+  cursor: grabbing;
+  transform: scale(1.08);
+  z-index: 10;
+  transition: none; /* follow the pointer directly */
+  animation: none;
+}
+
+.bubble.target {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.45);
+}
+
+.bubble.selected {
+  outline: 3px solid rgba(26, 60, 94, 0.55);
+}
+
+.bubble.scrambling {
+  filter: blur(0.4px);
+}
+
+.bubble.feedback-good {
+  background: radial-gradient(circle at 30% 25%, #f0fff0 0%, #b9f6ca 60%, #66bb6a 100%);
+  box-shadow: 0 0 18px rgba(76, 175, 80, 0.7);
+}
+
+.bubble.feedback-bad {
+  background: radial-gradient(circle at 30% 25%, #fff5f5 0%, #ffcdd2 60%, #ef5350 100%);
+  box-shadow: 0 0 18px rgba(239, 83, 80, 0.6);
+  animation: shake 0.35s ease;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: -5px 0;
+  }
+  75% {
+    translate: 5px 0;
+  }
+}
+
+/* --- Overlays ------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 60, 94, 0.5);
+  z-index: 100;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(26, 60, 94, 0.35);
+}
+
+.panel h2 {
+  margin: 0 0 1rem;
+}
+
+/* --- Small screens -------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .topbar {
+    gap: 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .bubble {
+    min-width: 4.25rem;
+    min-height: 4.25rem;
+    padding: 0.5rem 0.7rem;
+  }
 }
