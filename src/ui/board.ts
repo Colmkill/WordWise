@@ -18,11 +18,18 @@ interface Position {
   y: number;
 }
 
+interface ActiveDrag {
+  bubbleId: number;
+  cancel: () => void;
+}
+
 export class Board {
   private container: HTMLElement;
   private positions = new Map<number, Position>();
   private locked = false;
   private hintMode = false;
+  private paused = false;
+  private activeDrag: ActiveDrag | null = null;
   /** Called to validate a drop; the board awaits the result for feedback. */
   onAttempt: (a: number, b: number) => Promise<AttemptResult> = async () => 'invalid';
   /** Called after the state has changed (for HUD updates). */
@@ -46,9 +53,32 @@ export class Board {
     this.container.classList.toggle('hint-mode', active);
   }
 
+  /**
+   * Pause/resume gameplay. Pausing cancels any active drag (the bubble returns
+   * to its last stable position) and freezes bubble motion.
+   */
+  setPaused(paused: boolean) {
+    if (paused && !this.paused) {
+      this.cancelActiveDrag();
+    }
+    this.paused = paused;
+    this.container.classList.toggle('paused', paused);
+  }
+
+  isPaused() {
+    return this.paused;
+  }
+
+  /** Cancel the in-flight drag: bubble snaps back; no attempt is made. */
+  private cancelActiveDrag() {
+    if (this.activeDrag) {
+      this.activeDrag.cancel();
+      this.activeDrag = null;
+    }
+  }
+
   /** Render the current state, preserving positions of existing bubbles. */
   render(state: GameState) {
-    // Remove DOM nodes for bubbles that left play (merged or completed).
     for (const el of Array.from(this.container.querySelectorAll('.bubble'))) {
       const id = Number((el as HTMLElement).dataset.id);
       if (!state.bubbles.some((b) => b.id === id)) el.remove();
@@ -65,7 +95,6 @@ export class Board {
         this.container.appendChild(el);
       }
       el.classList.remove('dragging', 'target', 'feedback-good', 'feedback-bad', 'selected');
-      // Display: single words as-is; merged groups show scrambled letters.
       el.textContent =
         bubble.words.length === 1 ? bubble.words[0] : scramble(bubble.words.join(''));
       const pos = this.ensurePosition(bubble.id);
@@ -78,17 +107,33 @@ export class Board {
 
   /**
    * Show a completed topic's category inside its bubble, then float it offscreen.
-   * Returns a promise that resolves when the bubble is fully removed.
    */
   async revealCategory(bubbleId: number, category: string, revealMs: number): Promise<void> {
     const el = this.bubbleEl(bubbleId);
     if (!el) return;
     el.classList.add('revealing');
     el.textContent = category;
-    await new Promise((resolve) => setTimeout(resolve, revealMs));
+    await this.waitWhilePaused(revealMs);
     el.classList.add('float-off');
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    await this.waitWhilePaused(700);
     el.remove();
+  }
+
+  /** setTimeout that does not count down while the game is paused. */
+  private waitWhilePaused(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      let remaining = ms;
+      let last = performance.now();
+      const tick = (now: number) => {
+        if (!this.paused) {
+          remaining -= now - last;
+        }
+        last = now;
+        if (remaining <= 0) resolve();
+        else requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
   }
 
   /** Show a hint in a speech bubble above the given word bubble; auto-dismiss. */
@@ -106,18 +151,15 @@ export class Board {
       const br = this.container.getBoundingClientRect();
       const width = tip.offsetWidth;
       const height = tip.offsetHeight;
-      // Prefer above the bubble; flip below if there is not enough room.
       let top = r.top - br.top - height - 10;
       if (top < 8) top = r.bottom - br.top + 10;
       let left = r.left - br.left + r.width / 2 - width / 2;
-      // Keep it fully readable and inside the board.
       left = Math.max(8, Math.min(left, br.width - width - 8));
       tip.style.top = `${top}px`;
       tip.style.left = `${left}px`;
     };
 
     requestAnimationFrame(place);
-    // Recheck placement once fonts/layout settle.
     setTimeout(place, 60);
 
     const dismiss = () => {
@@ -158,7 +200,7 @@ export class Board {
 
   /** Gently push overlapping bubbles apart (layout only; never groups them). */
   private relax(state: GameState) {
-    const size = 120; // approx bubble diameter for spacing purposes
+    const size = 120;
     for (let pass = 0; pass < 2; pass++) {
       for (const a of state.bubbles) {
         for (const b of state.bubbles) {
@@ -193,40 +235,44 @@ export class Board {
   /** Wire pointer-based dragging (mouse + touch via Pointer Events). */
   private attachDrag(el: HTMLElement, id: number) {
     el.addEventListener('pointerdown', (e: PointerEvent) => {
-      if (this.locked) return;
+      if (this.locked || this.paused) return;
 
       if (this.hintMode) {
-        // Tap in hint mode: select this bubble for a hint, no dragging.
         e.preventDefault();
         this.onHintSelect(id);
         return;
       }
 
-      e.preventDefault(); // blocks text selection and touch scroll on the bubble
+      e.preventDefault();
       el.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
       const startX = e.clientX;
       const startY = e.clientY;
       const pos = { ...this.ensurePosition(id) };
+      const stable = this.ensurePosition(id);
 
       const move = (ev: PointerEvent) => {
-        pos.x = this.ensurePosition(id).x + (ev.clientX - startX);
-        pos.y = this.ensurePosition(id).y + (ev.clientY - startY);
+        pos.x = stable.x + (ev.clientX - startX);
+        pos.y = stable.y + (ev.clientY - startY);
         this.place(el, pos);
         const target = this.targetUnder(el, ev.clientX, ev.clientY);
         this.container.querySelectorAll('.bubble.target').forEach((t) => t.classList.remove('target'));
         if (target) target.classList.add('target');
       };
 
-      const up = async (ev: PointerEvent) => {
+      const cleanup = () => {
         el.removeEventListener('pointermove', move);
         el.removeEventListener('pointerup', up);
         el.removeEventListener('pointercancel', cancel);
+      };
+
+      const up = async (ev: PointerEvent) => {
+        cleanup();
+        this.activeDrag = null;
         const target = this.targetUnder(el, ev.clientX, ev.clientY);
         el.classList.remove('dragging');
         this.container.querySelectorAll('.bubble.target').forEach((t) => t.classList.remove('target'));
         if (!target) {
-          // Released without a target: settle near the release point. No attempt.
           this.positions.set(id, pos);
           return;
         }
@@ -234,12 +280,14 @@ export class Board {
       };
 
       const cancel = () => {
-        el.removeEventListener('pointermove', move);
-        el.removeEventListener('pointerup', up);
-        el.removeEventListener('pointercancel', cancel);
+        cleanup();
         el.classList.remove('dragging');
         this.container.querySelectorAll('.bubble.target').forEach((t) => t.classList.remove('target'));
+        // Return to the last stable position: no attempt, no penalty.
+        this.place(el, stable);
       };
+
+      this.activeDrag = { bubbleId: id, cancel };
 
       el.addEventListener('pointermove', move);
       el.addEventListener('pointerup', up);
@@ -280,7 +328,7 @@ export class Board {
         }
       }
     }, 120);
-    await new Promise((resolve) => setTimeout(resolve, VALIDATION_DELAY_MS));
+    await this.waitWhilePaused(VALIDATION_DELAY_MS);
     window.clearInterval(scrambleTimer);
     a.classList.remove('scrambling');
     b.classList.remove('scrambling');
@@ -293,7 +341,7 @@ export class Board {
       a.classList.add('feedback-bad');
       b.classList.add('feedback-bad');
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await this.waitWhilePaused(500);
     a.classList.remove('selected', 'feedback-good', 'feedback-bad');
     b.classList.remove('selected', 'feedback-good', 'feedback-bad');
     this.setLocked(false);

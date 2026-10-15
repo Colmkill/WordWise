@@ -271,3 +271,30 @@ body {
     padding: 0.5rem 0.7rem;
   }
 }
+
+/* --- Pause & menus (Phase 6a) ---------------------------------------------- */
+
+.board.paused .bubble {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 14rem;
+}
+
+.menu-buttons .btn {
+  width: 100%;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  font-size: 1rem;
+  cursor: pointer;
+}
