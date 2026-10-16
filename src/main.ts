@@ -9,6 +9,7 @@ import { loadSettings, saveSettings } from './ui/menus';
 import { showModal, type Settings } from './ui/menus';
 import { loadCheckpoint, saveCheckpoint, clearCheckpoint, checkpointFrom } from './ui/save';
 import { startReplay } from './ui/flow';
+import { AudioFx } from './audio';
 import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS } from './config';
 
 // Validate all level data before play (fails fast in dev).
@@ -17,6 +18,8 @@ validateLevels(LEVELS);
 const app = document.querySelector<HTMLElement>('#app')!;
 
 let settings: Settings = loadSettings();
+const audio = new AudioFx();
+audio.setEnabled(settings.sound);
 let checkpoint = loadCheckpoint();
 let storageWarned = false;
 
@@ -31,6 +34,11 @@ let paused = false;
 
 const currentLevel = (): Level => LEVELS[levelIndex];
 
+
+function sync(): void {
+  audio.setEnabled(settings.sound);
+  document.body.classList.toggle('reduced-motion', settings.reducedMotion);
+}
 // --- Screens ----------------------------------------------------------------
 
 function buildShell() {
@@ -291,6 +299,14 @@ function updateHud(s: GameState) {
   const remaining = level.topics.length - s.completedTopics.length;
   hudTopics().textContent = `Topics: ${remaining}`;
   hudMistakes().textContent = `Mistakes: ${s.mistakes}/${s.mistakeThreshold}`;
+  const tension = s.mistakeThreshold > 0 ? s.mistakes / s.mistakeThreshold : 0;
+  const boardNode = document.querySelector('#board');
+  if (boardNode) {
+    boardNode.classList.remove('tension-1', 'tension-2', 'tension-3');
+    if (tension >= 0.99) boardNode.classList.add('tension-3');
+    else if (tension >= 0.6) boardNode.classList.add('tension-2');
+    else if (tension >= 0.3) boardNode.classList.add('tension-1');
+  }
   hudLives().textContent = `Lives: ${'♥'.repeat(s.lives)}${'♡'.repeat(Math.max(0, 3 - s.lives))}`;
   const hintAvailable =
     s.status === 'playing' &&
@@ -321,6 +337,7 @@ function buildBoardAndWire() {
         const topic = currentLevel().topics.find((t) => t.id === completedTopicId)!;
         const merged = prevState.bubbles.find((bb) => bb.topicId === completedTopicId)!;
         if (!revealing.has(merged.id)) {
+          audio.play('topicComplete');
           revealing.add(merged.id);
           updateHud(state);
           board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
@@ -335,6 +352,7 @@ function buildBoardAndWire() {
       if (state.status === 'gameOver') {
         setTimeout(showGameOver, 700);
       }
+      audio.play('correct');
       return 'correct';
     }
 
@@ -344,6 +362,7 @@ function buildBoardAndWire() {
       } else {
         setTimeout(render, 0);
       }
+      audio.play('incorrect');
       return 'incorrect';
     }
 
@@ -414,6 +433,7 @@ function checkLevelComplete() {
 }
 
 function celebrate(text: string) {
+  audio.play('levelComplete');
   const el = document.createElement('div');
   el.className = 'celebration';
   el.textContent = text;
@@ -584,5 +604,6 @@ function showRunComplete() {
 
 // --- Boot --------------------------------------------------------------------
 
+sync();
 buildShell();
 showMainMenu();
