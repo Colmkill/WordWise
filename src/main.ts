@@ -310,7 +310,7 @@ function renderLives(lives: number) {
   for (let i = 0; i < lives; i++) html += '<span class="life">' + "♥" + '</span>';
   for (let i = 0; i < lost; i++) {
     const animate = animateLost && i === lost - 1 ? ' just-lost' : '';
-    html += `<span class="life lost${animate}">♥`;
+    html += `<span class="life lost${animate}">♥</span>`;
   }
   el.innerHTML = html;
   lastLives = lives;
