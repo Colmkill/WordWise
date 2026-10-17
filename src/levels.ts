@@ -131,4 +131,34 @@ export const LEVELS: Level[] = [
       { id: 'orchestra-2', concept: 'orchestra', category: 'ORCHESTRA', words: ['coda', 'pizzicato', 'crescendo', 'downbeat', 'encore'], hint: 'Words you meet in the score and on stage.', difficulty: 5, status: 'reviewed' }
     ]
   }
+  {
+    id: 13,
+    mistakeThreshold: 2,
+    topics: [
+      { id: 'falconry', concept: 'falconry', category: 'FALCONRY', words: ['jess', 'hood', 'creance'], hint: 'The hawk handler's toolkit.', difficulty: 4, status: 'draft' },
+      { id: 'watchmaking', concept: 'horology', category: 'HOROLOGY', words: ['escapement', 'mainspring', 'tourbillon'], hint: 'Tiny parts ticking inside the case.', difficulty: 5, status: 'draft' },
+      { id: 'beekeeping', concept: 'apiary', category: 'APIARY', words: ['smoker', 'extractor', 'propolis'], hint: 'Gear and goods from the bee yard.', difficulty: 4, status: 'draft' },
+      { id: 'cartography', concept: 'cartography', category: 'CARTOGRAPHY', words: ['meridian', 'isobar', 'sounding'], hint: 'Lines a mapmaker draws.', difficulty: 4, status: 'draft' }
+    ]
+  },
+  {
+    id: 14,
+    mistakeThreshold: 2,
+    topics: [
+      { id: 'fungi', concept: 'mycology', category: 'MYCOLOGY', words: ['mycelium', 'hyphae', 'sporocarp'], hint: 'Parts of the fungal world, magnified.', difficulty: 5, status: 'draft' },
+      { id: 'coins', concept: 'numismatics', category: 'NUMISMATICS', words: ['obverse', 'mule', 'planchet'], hint: 'Terms a coin dealer knows.', difficulty: 4, status: 'draft' },
+      { id: 'winemaking', concept: 'oenology', category: 'OENOLOGY', words: ['lees', 'terroir', 'malolactic'], hint: 'Words from the cellar door.', difficulty: 4, status: 'draft' },
+      { id: 'glasswork', concept: 'glassblowing', category: 'GLASSBLOWING', words: ['punty', 'gather', 'annealing'], hint: 'Steps and tools at the hot shop.', difficulty: 5, status: 'draft' }
+    ]
+  },
+  {
+    id: 15,
+    mistakeThreshold: 2,
+    topics: [
+      { id: 'orchestra-3', concept: 'orchestra', category: 'ORCHESTRA', words: ['cadenza', 'glissando', 'timpani', 'attacca'], hint: 'Markings and moments on the concert programme.', difficulty: 5, status: 'draft' },
+      { id: 'chess-3', concept: 'chess', category: 'CHESS', words: ['zugzwang', 'zwischenzug', 'en passant'], hint: 'A grandmaster's vocabulary of forced positions.', difficulty: 5, status: 'draft' },
+      { id: 'alchemy', concept: 'alchemy', category: 'ALCHEMY', words: ['alembic', 'calcination', 'quintessence'], hint: 'The old laboratory's pursuit of transformation.', difficulty: 4, status: 'draft' },
+      { id: 'taxonomy', concept: 'taxonomy', category: 'TAXONOMY', words: ['genus', 'binomial', 'type specimen'], hint: 'How a species gets its scientific name.', difficulty: 4, status: 'draft' }
+    ]
+  }
 ];

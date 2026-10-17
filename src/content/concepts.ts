@@ -46,4 +46,14 @@ export const TOPIC_CONCEPTS: Record<string, TopicConcept> = {
   chess: { slug: 'chess', category: 'CHESS' },
   typography: { slug: 'typography', category: 'TYPESETTING' },
   volcano: { slug: 'volcano', category: 'VOLCANO' }
+  alchemy: { slug: 'alchemy', category: 'ALCHEMY' },
+  apiary: { slug: 'apiary', category: 'APIARY' },
+  cartography: { slug: 'cartography', category: 'CARTOGRAPHY' },
+  falconry: { slug: 'falconry', category: 'FALCONRY' },
+  glassblowing: { slug: 'glassblowing', category: 'GLASSBLOWING' },
+  horology: { slug: 'horology', category: 'HOROLOGY' },
+  mycology: { slug: 'mycology', category: 'MYCOLOGY' },
+  numismatics: { slug: 'numismatics', category: 'NUMISMATICS' },
+  oenology: { slug: 'oenology', category: 'OENOLOGY' },
+  taxonomy: { slug: 'taxonomy', category: 'TAXONOMY' },
 };
