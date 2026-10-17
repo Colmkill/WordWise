@@ -98,6 +98,29 @@ export class Board {
   }
 
   /**
+   * Debounced re-layout for viewport changes (mobile rotate, URL-bar show/hide,
+   * window resize). Re-scatters bubbles for the new dimensions. Returns a
+   * cleanup that removes the listeners.
+   */
+  observeViewport(onRelayout: () => void): () => void {
+    let timer = 0;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        this.positions.clear();
+        onRelayout();
+      }, 150) as unknown as number;
+    };
+    window.addEventListener('resize', schedule);
+    window.addEventListener('orientationchange', schedule);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('orientationchange', schedule);
+    };
+  }
+
+  /**
    * Assign fresh positions for all bubbles: grid slots with jitter, shuffled,
    * with a few passes that swap same-topic neighbours apart so a topic's words
    * never start clustered together (they still may, by chance, in tiny boards).
@@ -112,13 +135,19 @@ export class Board {
     const cellW = rect.width / Math.max(1, cols);
     const cellH = rect.height / Math.max(1, rows);
 
+    // Measured bubble footprint (fallback 90x70 for the very first layout
+    // pass, before any element exists) instead of desktop magic numbers.
+    const sample = this.container.querySelector<HTMLElement>('.bubble');
+    const bw = sample?.offsetWidth ?? 90;
+    const bh = sample?.offsetHeight ?? 70;
+
     const slots: Position[] = [];
     for (let r0 = 0; r0 < rows; r0++) {
       for (let c = 0; c < cols; c++) {
         if (slots.length >= n) break;
         slots.push({
-          x: Math.min(rect.width - 100, (c + 0.5) * cellW + (Math.random() - 0.5) * cellW * 0.4),
-          y: Math.min(rect.height - 60, (r0 + 0.5) * cellH + (Math.random() - 0.5) * cellH * 0.4)
+          x: Math.max(4, Math.min(rect.width - bw - 4, (c + 0.5) * cellW + (Math.random() - 0.5) * cellW * 0.4)),
+          y: Math.max(4, Math.min(rect.height - bh - 4, (r0 + 0.5) * cellH + (Math.random() - 0.5) * cellH * 0.4))
         });
       }
     }
@@ -314,7 +343,14 @@ export class Board {
 
   /** Gently push overlapping bubbles apart (layout only; never groups them). */
   private relax(state: GameState) {
-    const size = 120;
+    // Use the largest rendered bubble so spacing adapts to the viewport
+    // (bubbles shrink on phones via CSS; the old fixed 120px did not).
+    let size = 0;
+    for (const b of state.bubbles) {
+      const el = this.bubbleEl(b.id);
+      if (el) size = Math.max(size, el.offsetWidth, el.offsetHeight);
+    }
+    if (size === 0) size = 90;
     for (let pass = 0; pass < 2; pass++) {
       for (const a of state.bubbles) {
         for (const b of state.bubbles) {
@@ -339,10 +375,13 @@ export class Board {
     }
     const rect = this.container.getBoundingClientRect();
     for (const bubble of state.bubbles) {
+      const el = this.bubbleEl(bubble.id);
       const p = this.ensurePosition(bubble.id);
-      p.x = Math.max(8, Math.min(p.x, rect.width - 100));
-      p.y = Math.max(8, Math.min(p.y, rect.height - 60));
-      this.place(this.bubbleEl(bubble.id)!, p);
+      const w = el?.offsetWidth ?? 90;
+      const h = el?.offsetHeight ?? 70;
+      p.x = Math.max(4, Math.min(p.x, rect.width - w - 4));
+      p.y = Math.max(4, Math.min(p.y, rect.height - h - 4));
+      this.place(el!, p);
     }
   }
 

@@ -317,6 +317,8 @@ body {
   min-height: 100vh;
   padding: 1.5rem;
   text-align: center;
+;
+  min-height: 100dvh; /* mobile: exclude browser chrome */
 }
 
 .menu-screen h1 {
@@ -487,4 +489,29 @@ body.reduced-motion .board.hint-mode .bubble:hover {
 
 body.reduced-motion .life.just-lost {
   animation: none !important;
+}
+
+/* --- Mobile responsiveness ---------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .bubble {
+    max-width: 10rem;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .bubble {
+    min-width: 5rem;
+    min-height: 5rem;
+  }
+}
+
+.topbar,
+.storage-note {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.storage-note {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }

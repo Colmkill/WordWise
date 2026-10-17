@@ -346,6 +346,8 @@ function render() {
 function buildBoardAndWire() {
   board = new Board(boardEl());
   board.onRender = updateHud;
+  // Re-scatter bubbles when the viewport changes (rotate/resize on mobile).
+  board.observeViewport(() => render());
 
   board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
     const outcome = attemptGrouping(state, currentLevel(), a, b);
