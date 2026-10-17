@@ -135,7 +135,7 @@ export const LEVELS: Level[] = [
     id: 13,
     mistakeThreshold: 2,
     topics: [
-      { id: 'falconry', concept: 'falconry', category: 'FALCONRY', words: ['jess', 'hood', 'creance'], hint: 'The hawk handler's toolkit.', difficulty: 4, status: 'draft' },
+      { id: 'falconry', concept: 'falconry', category: 'FALCONRY', words: ['jess', 'hood', 'creance'], hint: 'Tools of the hawk handler.', difficulty: 4, status: 'draft' },
       { id: 'watchmaking', concept: 'horology', category: 'HOROLOGY', words: ['escapement', 'mainspring', 'tourbillon'], hint: 'Tiny parts ticking inside the case.', difficulty: 5, status: 'draft' },
       { id: 'beekeeping', concept: 'apiary', category: 'APIARY', words: ['smoker', 'extractor', 'propolis'], hint: 'Gear and goods from the bee yard.', difficulty: 4, status: 'draft' },
       { id: 'cartography', concept: 'cartography', category: 'CARTOGRAPHY', words: ['meridian', 'isobar', 'sounding'], hint: 'Lines a mapmaker draws.', difficulty: 4, status: 'draft' }
@@ -156,8 +156,8 @@ export const LEVELS: Level[] = [
     mistakeThreshold: 2,
     topics: [
       { id: 'orchestra-3', concept: 'orchestra', category: 'ORCHESTRA', words: ['cadenza', 'glissando', 'timpani', 'attacca'], hint: 'Markings and moments on the concert programme.', difficulty: 5, status: 'draft' },
-      { id: 'chess-3', concept: 'chess', category: 'CHESS', words: ['zugzwang', 'zwischenzug', 'en passant'], hint: 'A grandmaster's vocabulary of forced positions.', difficulty: 5, status: 'draft' },
-      { id: 'alchemy', concept: 'alchemy', category: 'ALCHEMY', words: ['alembic', 'calcination', 'quintessence'], hint: 'The old laboratory's pursuit of transformation.', difficulty: 4, status: 'draft' },
+      { id: 'chess-3', concept: 'chess', category: 'CHESS', words: ['zugzwang', 'zwischenzug', 'en passant'], hint: 'Vocabulary of forced positions from deep study of the board.', difficulty: 5, status: 'draft' },
+      { id: 'alchemy', concept: 'alchemy', category: 'ALCHEMY', words: ['alembic', 'calcination', 'quintessence'], hint: 'The old laboratory sought transformation with these.', difficulty: 4, status: 'draft' },
       { id: 'taxonomy', concept: 'taxonomy', category: 'TAXONOMY', words: ['genus', 'binomial', 'type specimen'], hint: 'How a species gets its scientific name.', difficulty: 4, status: 'draft' }
     ]
   }
