@@ -18,7 +18,7 @@ export const LEVELS: Level[] = [
       { id: 'furniture', concept: 'furniture', category: 'FURNITURE', words: ['chair', 'table', 'sofa'], hint: 'You sit or rest on these at home.', difficulty: 1, status: 'reviewed' },
       { id: 'fruit', concept: 'fruit', category: 'FRUIT', words: ['apple', 'banana', 'cherry'], hint: 'Sweet things that grow on trees and plants.', difficulty: 1, status: 'reviewed' },
       { id: 'weather', concept: 'weather', category: 'WEATHER', words: ['rain', 'snow', 'wind'], hint: 'Look out the window to check these.', difficulty: 1, status: 'reviewed' },
-      { id: 'colours', concept: 'colours', category: 'COLOURS', words: ['red', 'blue', 'green'], hint: 'You see them in a rainbow.', difficulty: 1, status: 'reviewed' }
+      { id: 'colours', concept: 'colours', category: 'COLOURS', words: ['red', 'yellow', 'blue', 'green'], hint: 'You see them in a rainbow.', difficulty: 1, status: 'reviewed' }
     ]
   },
   {
