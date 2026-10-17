@@ -321,6 +321,20 @@ export class Board {
     this.container.querySelectorAll('.hint-tip').forEach((t) => t.remove());
   }
 
+  /**
+   * Fade a merged-away bubble out of play. The element is captured
+   * synchronously (before any restart can recycle its id), so a later
+   * relayout or restart can never remove the wrong bubble.
+   */
+  retireBubble(bubbleId: number, delayMs = 0) {
+    const el = this.bubbleEl(bubbleId);
+    if (!el) return;
+    window.setTimeout(() => {
+      el.classList.add('float-off');
+      window.setTimeout(() => el.remove(), 700);
+    }, delayMs);
+  }
+
   private bubbleEl(id: number): HTMLElement | null {
     return this.container.querySelector<HTMLElement>(`.bubble[data-id="${id}"]`);
   }

@@ -360,11 +360,17 @@ function buildBoardAndWire() {
       if (newRemaining > prevRemaining) {
         const completedTopicId = state.completedTopics[newRemaining - 1];
         const topic = currentLevel().topics.find((t) => t.id === completedTopicId)!;
-        const merged = prevState.bubbles.find((bb) => bb.topicId === completedTopicId)!;
+        // attemptGrouping keeps the dragged bubble's id for the merged bubble;
+        // look it up by id so the reveal always targets the real merged bubble
+        // (a topicId lookup could find the partner bubble instead).
+        const merged = prevState.bubbles.find((bb) => bb.id === a)!;
         if (!revealing.has(merged.id)) {
           audio.play('topicComplete');
           revealing.add(merged.id);
           updateHud(state);
+          // The partner bubble left the state on the final merge: fade it out
+          // after the feedback flash instead of lingering through the reveal.
+          board.retireBubble(b, 500);
           board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
             revealing.delete(merged.id);
             render();
