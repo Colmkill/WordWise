@@ -14,8 +14,8 @@ const level = (): Level => ({
   id: 1,
   mistakeThreshold: 3,
   topics: [
-    { id: 'fruit', category: 'FRUIT', words: ['apple', 'banana', 'cherry'], hint: 'Sweet things that grow on trees.' },
-    { id: 'furniture', category: 'FURNITURE', words: ['chair', 'table'], hint: 'You sit or rest on these at home.' }
+    { id: 'fruit', concept: 'fruit', category: 'FRUIT', words: ['apple', 'banana', 'cherry'], hint: 'Sweet things that grow on trees.' },
+    { id: 'furniture', concept: 'furniture', category: 'FURNITURE', words: ['chair', 'table'], hint: 'You sit or rest on these at home.' }
   ]
 });
 
@@ -218,3 +218,4 @@ describe('progression', () => {
     expect(advanceLevel(s, levels).status).toBe('runComplete');
   });
 });
+

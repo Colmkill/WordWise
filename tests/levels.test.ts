@@ -4,18 +4,21 @@ import {
   validateLevels,
   validateContentPolicy,
   validateAllContentPolicy,
+  validateConcepts,
+  validateAllConcepts,
   revealsCategory
 } from '../src/core/validate';
 import { LEVELS } from '../src/levels';
 import { MIN_WORDS_PER_TOPIC, MAX_WORDS_PER_TOPIC } from '../src/config';
+import { TOPIC_CONCEPTS } from '../src/content/concepts';
 import type { Level } from '../src/types';
 
 const baseLevel = (): Level => ({
   id: 1,
   mistakeThreshold: 3,
   topics: [
-    { id: 'a', category: 'ALPHA', words: ['one', 'two', 'three'], hint: 'A clue for the first group.' },
-    { id: 'b', category: 'BETA', words: ['four', 'five', 'six'], hint: 'A clue for the second group.' }
+    { id: 'a', concept: 'alpha', category: 'ALPHA', words: ['one', 'two', 'three'], hint: 'A clue for the first group.' },
+    { id: 'b', concept: 'beta', category: 'BETA', words: ['four', 'five', 'six'], hint: 'A clue for the second group.' }
   ]
 });
 
@@ -108,7 +111,7 @@ describe('revealsCategory', () => {
   });
 });
 
-describe('content policy (3–7 words per shipped topic)', () => {
+describe('content policy (3â7 words per shipped topic)', () => {
   it.each([3, 4, 5, 6, 7])('accepts a topic with %i words', (n) => {
     const level = baseLevel();
     level.topics[0].words = topicWith(n);
@@ -155,7 +158,7 @@ describe('shipped level content', () => {
     expect(() => validateLevels(LEVELS)).not.toThrow();
   });
 
-  it('satisfies the 3–7 word content policy', () => {
+  it('satisfies the 3â7 word content policy', () => {
     expect(() => validateAllContentPolicy(LEVELS, MIN_WORDS_PER_TOPIC, MAX_WORDS_PER_TOPIC)).not.toThrow();
   });
 
@@ -168,6 +171,78 @@ describe('shipped level content', () => {
       const count = level.topics.reduce((n, t) => n + t.words.length, 0);
       const unique = new Set(level.topics.flatMap((t) => t.words.map((w) => w.toLowerCase())));
       expect(unique.size).toBe(count);
+    }
+  });
+});
+
+
+describe('concept validation', () => {
+  const registry = {
+    alpha: { slug: 'alpha', category: 'ALPHA' },
+    beta: { slug: 'beta', category: 'BETA' }
+  };
+
+  it('accepts valid concept references', () => {
+    expect(validateConcepts(baseLevel(), registry)).toEqual([]);
+  });
+
+  it('rejects an unknown concept', () => {
+    const level = baseLevel();
+    level.topics[0].concept = 'nope';
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('unknown concept'))).toBe(true);
+  });
+
+  it('rejects the same concept appearing twice in one level', () => {
+    const level = baseLevel();
+    level.topics[1].concept = 'alpha';
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('Duplicate concept'))).toBe(true);
+  });
+
+  it('rejects an instance category that mismatches its concept', () => {
+    const level = baseLevel();
+    level.topics[0].category = 'WRONG';
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('does not match concept'))).toBe(true);
+  });
+
+  it('rejects an out-of-range difficulty', () => {
+    const level = baseLevel();
+    level.topics[0].difficulty = 6;
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('difficulty'))).toBe(true);
+    level.topics[0].difficulty = 0;
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('difficulty'))).toBe(true);
+  });
+
+  it('rejects an invalid status', () => {
+    const level = baseLevel();
+    (level.topics[0] as any).status = 'final';
+    expect(validateConcepts(level, registry).some((i) => i.message.includes('status'))).toBe(true);
+  });
+
+  it('allows the same concept in different levels with different word lists', () => {
+    const a = baseLevel();
+    const b = baseLevel();
+    b.id = 2;
+    b.topics[1].concept = 'alpha';
+    b.topics[1].category = 'ALPHA';
+    b.topics[1].words = ['seven', 'eight', 'nine', 'ten'];
+    expect(validateAllConcepts([a, b], registry)).toBeUndefined();
+  });
+
+  it('aggregates issues across levels and throws in validateAllConcepts', () => {
+    const level = baseLevel();
+    level.topics[0].concept = 'nope';
+    expect(() => validateAllConcepts([level], registry)).toThrow(/Concept violations/);
+  });
+});
+
+describe('shipped concept registry', () => {
+  it('validates every shipped level against the concept registry', () => {
+    expect(() => validateAllConcepts(LEVELS, TOPIC_CONCEPTS)).not.toThrow();
+  });
+
+  it('keeps every concept slug keyed by its own slug', () => {
+    for (const [key, concept] of Object.entries(TOPIC_CONCEPTS)) {
+      expect(concept.slug).toBe(key);
     }
   });
 });
