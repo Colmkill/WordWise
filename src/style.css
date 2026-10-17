@@ -451,3 +451,40 @@ body.reduced-motion .board.hint-mode .bubble {
 body.reduced-motion .board.hint-mode .bubble:hover {
   box-shadow: 0 0 0 6px rgba(255, 193, 7, 0.7);
 }
+
+/* --- Lives HUD --------------------------------------------------------------- */
+
+#hud-lives {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12em;
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+.life {
+  color: #e53935;
+}
+
+.life.lost {
+  color: rgba(26, 60, 94, 0.22);
+}
+
+.life.just-lost {
+  animation: lifeLost 0.6s ease-out;
+}
+
+@keyframes lifeLost {
+  0% {
+    scale: 1.5;
+    color: #e53935;
+  }
+  100% {
+    scale: 1;
+    color: rgba(26, 60, 94, 0.22);
+  }
+}
+
+body.reduced-motion .life.just-lost {
+  animation: none !important;
+}

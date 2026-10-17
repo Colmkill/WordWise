@@ -11,7 +11,7 @@ import { showModal, type Settings } from './ui/menus';
 import { loadCheckpoint, saveCheckpoint, clearCheckpoint, checkpointFrom } from './ui/save';
 import { startReplay } from './ui/flow';
 import { AudioFx } from './audio';
-import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS } from './config';
+import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS, STARTING_LIVES } from './config';
 
 // Validate all level data before play (fails fast in dev).
 validateLevels(LEVELS);
@@ -108,7 +108,7 @@ function showHowToPlay() {
       <h2>How to Play</h2>
       <div class="howto">
         <p><b>Drag</b> one word bubble onto another to try grouping them.</p>
-        <p>Wait through the short scramble â <b>same-topic words merge</b> and show mixed letters.</p>
+        <p>Wait through the short scramble — <b>same-topic words merge</b> and show mixed letters.</p>
         <p>Merge every word of a topic to <b>reveal its hidden category</b>.</p>
         <p>Wrong pairs flash red and count as <b>mistakes</b>. Too many mistakes cost a <b>life</b> and restart the level.</p>
         <p>Lose all three lives and the run ends. <b>Hints</b>: one per topic per level.</p>
@@ -127,7 +127,7 @@ function showLevelSelect() {
       <div class="level-grid">
         ${LEVELS.map(
           (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
-            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? 'Ã¢ÂÂ ' : '') : 'Ã°ÂÂÂ'}
+            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? '✓ ' : '') : '🔒'}
           </button>`
         ).join('')}
       </div>
@@ -175,7 +175,7 @@ function warnStorage() {
   storageWarned = true;
   const note = document.createElement('div');
   note.className = 'storage-note';
-  note.textContent = 'Ã¢ÂÂ  Browser storage unavailable â progress may not be saved.';
+  note.textContent = '⚠ Browser storage unavailable — progress may not be saved.';
   app.appendChild(note);
   setTimeout(() => note.remove(), 6000);
 }
@@ -225,7 +225,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   screen().innerHTML = `
     <div class="menu-screen">
       <h2>Welcome to WordWise!</h2>
-      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them â correct groups reveal hidden categories.</p>
+      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them — correct groups reveal hidden categories.</p>
       <div id="t-board" class="tutorial-board"></div>
       <p class="tutorial-hint">In the real game, wrong matches cost mistakes. Here, just practise the drag.</p>
       <div class="menu-buttons"><button class="btn" id="t-skip">Skip to Level 1</button></div>
@@ -250,7 +250,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   tBoard.onAttempt = async (): Promise<AttemptResult> => {
     screen().innerHTML = `
       <div class="menu-screen">
-        <h2>Perfect! Ã°ÂÂÂ</h2>
+        <h2>Perfect! 🎉</h2>
         <p>Words in the same hidden group merge, mix their letters, and finally reveal the category name.</p>
         <div class="menu-buttons"><button class="btn" id="t-next">Start Level 1</button></div>
       </div>
@@ -276,7 +276,7 @@ function showGameScreen() {
       <span id="hud-level">Level 1</span>
       <span id="hud-topics">Topics: 0</span>
       <span id="hud-mistakes">Mistakes: 0/3</span>
-      <span id="hud-lives">Lives: Ã¢ÂÂ¥Ã¢ÂÂ¥Ã¢ÂÂ¥</span>
+      <span id="hud-lives" class="lives" role="img"></span>
       ${replay ? '<span class="replay-tag">Replay</span>' : ''}
       <button id="btn-hint" class="btn">Hint</button>
       <button id="btn-menu" class="btn">Menu</button>
@@ -297,6 +297,25 @@ const menuBtn = () => document.querySelector<HTMLButtonElement>('#btn-menu')!;
 
 let board: Board;
 
+/** Previously rendered lives, so a life loss can animate the emptied heart. */
+let lastLives = STARTING_LIVES;
+
+/** Hearts HUD: red hearts for remaining lives, faint ones for lost lives. */
+function renderLives(lives: number) {
+  const el = hudLives();
+  const lost = Math.max(0, STARTING_LIVES - lives);
+  const animateLost = lives < lastLives;
+  el.setAttribute('aria-label', `Lives: ${lives} of ${STARTING_LIVES}`);
+  let html = '';
+  for (let i = 0; i < lives; i++) html += '<span class="life">' + "♥" + '</span>';
+  for (let i = 0; i < lost; i++) {
+    const animate = animateLost && i === lost - 1 ? ' just-lost' : '';
+    html += `<span class="life lost${animate}">♥`;
+  }
+  el.innerHTML = html;
+  lastLives = lives;
+}
+
 function updateHud(s: GameState) {
   const level = currentLevel();
   hudLevel().textContent = `Level ${s.levelId}`;
@@ -311,7 +330,7 @@ function updateHud(s: GameState) {
     else if (tension >= 0.6) boardNode.classList.add('tension-2');
     else if (tension >= 0.3) boardNode.classList.add('tension-1');
   }
-  hudLives().textContent = `Lives: ${'Ã¢ÂÂ¥'.repeat(s.lives)}${'Ã¢ÂÂ¡'.repeat(Math.max(0, 3 - s.lives))}`;
+  renderLives(s.lives);
   const hintAvailable =
     s.status === 'playing' &&
     level.topics.some((t) => !s.completedTopics.includes(t.id) && !s.hintsUsed.includes(t.id));
@@ -419,7 +438,7 @@ function checkLevelComplete() {
     }
     if (replay) {
       // Replay: celebrate then return to Level Select.
-      celebrate(`Level ${state.levelId} Complete! Ã°ÂÂÂ`);
+      celebrate(`Level ${state.levelId} Complete! 🎉`);
       setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
@@ -432,7 +451,7 @@ function checkLevelComplete() {
     state = next;
     levelIndex = LEVELS.findIndex((l) => l.id === state.levelId);
     board.resetLayout();
-    celebrate(`Level ${state.levelId - 1} Complete! Ã°ÂÂÂ`);
+    celebrate(`Level ${state.levelId - 1} Complete! 🎉`);
     render();
   }, LEVEL_COMPLETE_PAUSE_MS);
 }
@@ -599,7 +618,7 @@ function showGameOver() {
 
 function showRunComplete() {
   const overlay = showModal(`
-    <h2>All levels complete! Ã°ÂÂÂ</h2>
+    <h2>All levels complete! 🎉</h2>
     <div class="menu-buttons"><button class="btn" id="btn-main">Main Menu</button></div>
   `);
   overlay.querySelector('#btn-main')!.addEventListener('click', () => {
