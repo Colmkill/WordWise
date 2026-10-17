@@ -22,6 +22,13 @@ body {
   color: #1a3c5e;
 }
 
+#screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* --- Top bar ------------------------------------------------------------- */
 
 .topbar {

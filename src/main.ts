@@ -125,7 +125,7 @@ function showLevelSelect() {
       <div class="level-grid">
         ${LEVELS.map(
           (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
-            ${l.id}. ${l.id <= highest ? (checkpoint!.completedLevels.includes(l.id) ? '✓ ' : '') : '🔒'}
+            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? '✓ ' : '') : '🔒'}
           </button>`
         ).join('')}
       </div>
@@ -155,10 +155,12 @@ function showSettingsPanel(onBack?: () => void) {
   overlay.querySelector('#sp-sound')!.addEventListener('change', (e) => {
     settings = { ...settings, sound: (e.target as HTMLInputElement).checked };
     if (!saveSettings(settings)) warnStorage();
+    sync();
   });
   overlay.querySelector('#sp-motion')!.addEventListener('change', (e) => {
     settings = { ...settings, reducedMotion: (e.target as HTMLInputElement).checked };
     if (!saveSettings(settings)) warnStorage();
+    sync();
   });
   overlay.querySelector('#sp-back')!.addEventListener('click', () => {
     overlay.remove();
