@@ -24,6 +24,11 @@ export function revealsCategory(hint: string, category: string): boolean {
 /**
  * Structural validation of level data, run before play.
  * Returns all issues found (empty array = valid).
+ *
+ * The engine-level minimum of two words per topic is a gameplay invariant.
+ * The shipped-content policy (3–7 words) is enforced separately by
+ * validateContentPolicy so tests and future tooling may still exercise
+ * two-word topics through this function.
  */
 export function validateLevel(level: Level): LevelIssue[] {
   const issues: LevelIssue[] = [];
@@ -82,5 +87,40 @@ export function validateLevels(levels: Level[]): void {
   if (issues.length > 0) {
     const report = issues.map((i) => `Level ${i.levelId}: ${i.message}`).join('\n');
     throw new Error(`Invalid level data:\n${report}`);
+  }
+}
+
+/**
+ * Shipped-content policy on top of structural validation:
+ * every topic must have between MIN_WORDS_PER_TOPIC (3) and
+ * MAX_WORDS_PER_TOPIC (7) words. This is a content-quality rule,
+ * not a gameplay invariant — two-word topics remain legal to the engine.
+ */
+export function validateContentPolicy(level: Level, min = 3, max = 7): LevelIssue[] {
+  const issues: LevelIssue[] = [];
+  for (const topic of level.topics) {
+    if (!Array.isArray(topic.words)) continue;
+    if (topic.words.length < min) {
+      issues.push({
+        levelId: level.id,
+        message: `Topic ${topic.id}: shipped content requires at least ${min} words (found ${topic.words.length}).`
+      });
+    }
+    if (topic.words.length > max) {
+      issues.push({
+        levelId: level.id,
+        message: `Topic ${topic.id}: shipped content allows at most ${max} words (found ${topic.words.length}).`
+      });
+    }
+  }
+  return issues;
+}
+
+/** Enforce the content policy across all shipped levels; throws on violation. */
+export function validateAllContentPolicy(levels: Level[], min = 3, max = 7): void {
+  const issues = levels.flatMap((l) => validateContentPolicy(l, min, max));
+  if (issues.length > 0) {
+    const report = issues.map((i) => `Level ${i.levelId}: ${i.message}`).join('\n');
+    throw new Error(`Content policy violations:\n${report}`);
   }
 }

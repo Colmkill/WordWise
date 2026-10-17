@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { validateLevel, validateLevels, revealsCategory } from '../src/core/validate';
+import {
+  validateLevel,
+  validateLevels,
+  validateContentPolicy,
+  validateAllContentPolicy,
+  revealsCategory
+} from '../src/core/validate';
 import { LEVELS } from '../src/levels';
+import { MIN_WORDS_PER_TOPIC, MAX_WORDS_PER_TOPIC } from '../src/config';
 import type { Level } from '../src/types';
 
 const baseLevel = (): Level => ({
@@ -11,6 +18,8 @@ const baseLevel = (): Level => ({
     { id: 'b', category: 'BETA', words: ['four', 'five', 'six'], hint: 'A clue for the second group.' }
   ]
 });
+
+const topicWith = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`);
 
 describe('validateLevel', () => {
   it('accepts a valid level', () => {
@@ -53,6 +62,15 @@ describe('validateLevel', () => {
     expect(validateLevel(level).some((i) => i.message.includes('at least two words'))).toBe(true);
   });
 
+  it('still accepts two-word topics at engine level (policy applies to shipped content only)', () => {
+    const level = baseLevel();
+    level.topics[1].words = ['four', 'five'];
+    // Structurally valid to the engine...
+    expect(validateLevel(level)).toEqual([]);
+    // ...but rejected by the shipped-content policy.
+    expect(validateContentPolicy(level).some((i) => i.message.includes('at least 3 words'))).toBe(true);
+  });
+
   it('rejects an invalid mistake threshold', () => {
     const level = baseLevel();
     level.mistakeThreshold = 0;
@@ -90,9 +108,55 @@ describe('revealsCategory', () => {
   });
 });
 
+describe('content policy (3–7 words per shipped topic)', () => {
+  it.each([3, 4, 5, 6, 7])('accepts a topic with %i words', (n) => {
+    const level = baseLevel();
+    level.topics[0].words = topicWith(n);
+    expect(validateContentPolicy(level)).toEqual([]);
+  });
+
+  it('rejects a topic with 2 words under the default policy', () => {
+    const level = baseLevel();
+    level.topics[0].words = topicWith(2);
+    expect(validateContentPolicy(level).some((i) => i.message.includes('at least 3 words'))).toBe(true);
+  });
+
+  it('rejects a topic exceeding the maximum', () => {
+    const level = baseLevel();
+    level.topics[0].words = topicWith(8);
+    expect(validateContentPolicy(level).some((i) => i.message.includes('at most 7 words'))).toBe(true);
+  });
+
+  it('supports mixed topic sizes within one level', () => {
+    const level = baseLevel();
+    level.topics[0].words = topicWith(3);
+    level.topics[1].words = topicWith(5);
+    expect(validateContentPolicy(level)).toEqual([]);
+  });
+
+  it('respects a custom configurable maximum for future larger groups', () => {
+    const level = baseLevel();
+    level.topics[0].words = topicWith(9);
+    // Fails under the default max of 7...
+    expect(validateContentPolicy(level).length).toBeGreaterThan(0);
+    // ...passes when the ceiling is raised to 9.
+    expect(validateContentPolicy(level, 3, 9)).toEqual([]);
+  });
+
+  it('aggregates issues across levels and throws in validateAllContentPolicy', () => {
+    const small = baseLevel();
+    small.topics[0].words = topicWith(2);
+    expect(() => validateAllContentPolicy([small])).toThrow(/Content policy violations/);
+  });
+});
+
 describe('shipped level content', () => {
   it('validates every sample level', () => {
     expect(() => validateLevels(LEVELS)).not.toThrow();
+  });
+
+  it('satisfies the 3–7 word content policy', () => {
+    expect(() => validateAllContentPolicy(LEVELS, MIN_WORDS_PER_TOPIC, MAX_WORDS_PER_TOPIC)).not.toThrow();
   });
 
   it('has strictly increasing level ids starting at 1', () => {
