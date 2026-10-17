@@ -139,7 +139,6 @@ export class Board {
     // A few improvement passes: for each same-topic pair that is closer than
     // 2 cell widths, swap one of them with a random other bubble if that
     // reduces same-topic proximity.
-    const topicOf = (id: number) => state.bubbles.find((b) => b.id === id)?.topicId;
     const dist = (a: Position, b: Position) => Math.hypot(a.x - b.x, a.y - b.y);
     const minSep = Math.min(cellW, cellH) * 2;
     for (let pass = 0; pass < 6; pass++) {
