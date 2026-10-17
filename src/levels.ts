@@ -130,7 +130,7 @@ export const LEVELS: Level[] = [
       { id: 'volcano-2', concept: 'volcano', category: 'VOLCANO', words: ['fumarole', 'pumice', 'vent', 'caldera', 'lahar'], hint: 'Vocabulary of an awakening peak.', difficulty: 5, status: 'reviewed' },
       { id: 'orchestra-2', concept: 'orchestra', category: 'ORCHESTRA', words: ['coda', 'pizzicato', 'crescendo', 'downbeat', 'encore'], hint: 'Words you meet in the score and on stage.', difficulty: 5, status: 'reviewed' }
     ]
-  }
+  },
   {
     id: 13,
     mistakeThreshold: 2,
