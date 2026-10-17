@@ -111,7 +111,7 @@ describe('revealsCategory', () => {
   });
 });
 
-describe('content policy (3â7 words per shipped topic)', () => {
+describe('content policy (3–7 words per shipped topic)', () => {
   it.each([3, 4, 5, 6, 7])('accepts a topic with %i words', (n) => {
     const level = baseLevel();
     level.topics[0].words = topicWith(n);
@@ -158,7 +158,7 @@ describe('shipped level content', () => {
     expect(() => validateLevels(LEVELS)).not.toThrow();
   });
 
-  it('satisfies the 3â7 word content policy', () => {
+  it('satisfies the 3–7 word content policy', () => {
     expect(() => validateAllContentPolicy(LEVELS, MIN_WORDS_PER_TOPIC, MAX_WORDS_PER_TOPIC)).not.toThrow();
   });
 
@@ -244,6 +244,42 @@ describe('shipped concept registry', () => {
   it('keeps every concept slug keyed by its own slug', () => {
     for (const [key, concept] of Object.entries(TOPIC_CONCEPTS)) {
       expect(concept.slug).toBe(key);
+    }
+  });
+});
+
+describe('phase C content expansion', () => {
+  it('ships twelve levels', () => {
+    expect(LEVELS).toHaveLength(12);
+  });
+
+  it('reuses concepts across levels with fresh word lists', () => {
+    const instances = new Map<string, string[][]>();
+    for (const level of LEVELS) {
+      for (const topic of level.topics) {
+        const lists = instances.get(topic.concept) ?? [];
+        for (const existing of lists) {
+          // A reused concept must come with a genuinely different word list.
+          const overlap = topic.words.filter((w) => existing.includes(w));
+          expect(overlap).toEqual([]);
+        }
+        lists.push(topic.words);
+        instances.set(topic.concept, lists);
+      }
+    }
+    const reused = [...instances.entries()].filter(([, lists]) => lists.length > 1);
+    expect(reused.length).toBeGreaterThan(0);
+  });
+
+  it('mixes group sizes within the later levels', () => {
+    const sizes = LEVELS[11].topics.map((t) => t.words.length);
+    expect(new Set(sizes).size).toBeGreaterThan(1);
+  });
+
+  it('never repeats a word across different topics of the same level (all levels)', () => {
+    for (const level of LEVELS) {
+      expect(validateConcepts(level, TOPIC_CONCEPTS)).toEqual([]);
+      expect(validateLevel(level)).toEqual([]);
     }
   });
 });
