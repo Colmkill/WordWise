@@ -132,6 +132,8 @@ export class Board {
     if (this.launching) return;
     this.launching = true;
     const gen = this.generation;
+    const turret = this.showTurret();
+    this.container.classList.add('launch-active');
     const rect = () => this.container.getBoundingClientRect();
     const turretX = () => rect().width / 2 - 45;
     const turretY = () => rect().height - 70;
@@ -176,9 +178,9 @@ export class Board {
           const pos = this.positions.get(bubble.id);
           if (!el || !pos) continue;
           // Turret puff.
-          this.turret?.classList.remove('puff');
-          void (this.turret as HTMLElement).offsetWidth; // restart animation
-          this.turret?.classList.add('puff');
+          turret.classList.remove('puff');
+          void turret.offsetWidth; // restart the CSS animation
+          turret.classList.add('puff');
           // Stage at turret, then fly to destination with ease-out.
           this.place(el, { x: turretX(), y: turretY() });
           el.classList.remove('pre-launch');

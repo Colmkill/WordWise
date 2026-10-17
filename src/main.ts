@@ -464,9 +464,15 @@ function maybeLaunchSequence() {
   });
 }
 
-/** True when the current render is a fresh level (no bubble positions yet). */
+/** True when the current state is a fresh, not-yet-played level. */
 function isFreshLevel(): boolean {
-  return state.bubbles.length > 0 && board.isLaunching() === false && !state.completedTopics.length;
+  return (
+    state.bubbles.length > 0 &&
+    !board.isLaunching() &&
+    state.mistakes === 0 &&
+    state.hintsUsed.length === 0 &&
+    !state.completedTopics.length
+  );
 }
 
 function checkLevelComplete() {
@@ -500,6 +506,7 @@ function checkLevelComplete() {
     board.resetLayout();
     celebrate(`Level ${state.levelId - 1} Complete! 🎉`);
     render();
+    maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
 }
 
@@ -566,6 +573,7 @@ function menuView(overlay: HTMLElement) {
         state = replay ? startReplay(currentLevel().id) : startLevel(currentLevel(), state.lives);
         board.resetLayout();
         render();
+        maybeLaunchSequence();
         setPaused(false);
       }
     );
