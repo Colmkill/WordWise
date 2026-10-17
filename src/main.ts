@@ -138,8 +138,7 @@ function showLevelSelect() {
       replay = true;
       levelIndex = LEVELS.findIndex((l) => l.id === id);
       state = startReplay(id);
-      resetLayoutBeforeRender();
-      showGameScreen();
+          showGameScreen();
     });
   });
   screen().querySelector('#ls-back')!.addEventListener('click', showMainMenu);
@@ -266,7 +265,6 @@ function startGame(idx: number, lives: number) {
   replay = false;
   levelIndex = idx;
   state = startLevel(LEVELS[idx], lives);
-  resetLayoutBeforeRender();
   showGameScreen();
 }
 
