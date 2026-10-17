@@ -11,7 +11,16 @@ import { showModal, type Settings } from './ui/menus';
 import { loadCheckpoint, saveCheckpoint, clearCheckpoint, checkpointFrom } from './ui/save';
 import { startReplay } from './ui/flow';
 import { AudioFx } from './audio';
-import { CATEGORY_REVEAL_MS, LEVEL_COMPLETE_PAUSE_MS, STARTING_LIVES } from './config';
+import {
+  CATEGORY_REVEAL_MS,
+  LEVEL_COMPLETE_PAUSE_MS,
+  STARTING_LIVES,
+  LAUNCH_SEQUENCE_TARGET_MS,
+  LAUNCH_TRAVEL_MS,
+  LAUNCH_OVERLAP,
+  LAUNCH_REDUCED_FADE_MS,
+  LAUNCH_REDUCED_STAGGER_MS
+} from './config';
 
 // Validate all level data before play (fails fast in dev).
 validateLevels(LEVELS);
@@ -285,6 +294,7 @@ function showGameScreen() {
   `;
   buildBoardAndWire();
   render();
+  maybeLaunchSequence();
 }
 
 const boardEl = () => document.querySelector<HTMLElement>('#board')!;
@@ -347,7 +357,11 @@ function buildBoardAndWire() {
   board = new Board(boardEl());
   board.onRender = updateHud;
   // Re-scatter bubbles when the viewport changes (rotate/resize on mobile).
-  board.observeViewport(() => render());
+  // Mid-flight resizes are handled by the launch sequence itself (generation
+  // guard + fresh scatter on the next render).
+  board.observeViewport(() => {
+    if (!board.isLaunching()) render();
+  });
 
   board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
     const outcome = attemptGrouping(state, currentLevel(), a, b);
@@ -428,6 +442,31 @@ function buildBoardAndWire() {
   });
 
   menuBtn().addEventListener('click', openGameMenu);
+}
+
+/**
+ * Fresh-level turret launch: hide the bubbles, then fire each one from the
+ * turret to its pre-assigned destination. Bubbles are not interactive until
+ * every bubble has settled (board locked during the sequence).
+ */
+function maybeLaunchSequence() {
+  if (!isFreshLevel()) return;
+  board.setLocked(true);
+  board.launchSequence(state, {
+    sequenceTarget: LAUNCH_SEQUENCE_TARGET_MS,
+    travel: LAUNCH_TRAVEL_MS,
+    overlap: LAUNCH_OVERLAP,
+    reducedFade: LAUNCH_REDUCED_FADE_MS,
+    reducedStagger: LAUNCH_REDUCED_STAGGER_MS
+  }).then(() => {
+    board.setLocked(false);
+    render();
+  });
+}
+
+/** True when the current render is a fresh level (no bubble positions yet). */
+function isFreshLevel(): boolean {
+  return state.bubbles.length > 0 && board.isLaunching() === false && !state.completedTopics.length;
 }
 
 function checkLevelComplete() {

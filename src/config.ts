@@ -11,6 +11,21 @@ export const CATEGORY_REVEAL_MS = 1500;
 /** Pause between level completion celebration and next level start (ms). */
 export const LEVEL_COMPLETE_PAUSE_MS = 1200;
 
+/** Turret launch animation: total sequence target for a full level (ms). */
+export const LAUNCH_SEQUENCE_TARGET_MS = 4200;
+
+/** Travel time for a single bubble from turret to destination (ms). */
+export const LAUNCH_TRAVEL_MS = 650;
+
+/** Overlap: the next bubble launches when the previous is this fraction through its flight. */
+export const LAUNCH_OVERLAP = 0.5;
+
+/** Reduced-motion alternative: fade-in duration per bubble (ms). */
+export const LAUNCH_REDUCED_FADE_MS = 350;
+
+/** Reduced-motion alternative: stagger between bubble appearances (ms). */
+export const LAUNCH_REDUCED_STAGGER_MS = 60;
+
 /** Lives at the start of a new run. */
 export const STARTING_LIVES = 3;
 

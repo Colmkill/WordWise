@@ -13,6 +13,20 @@ export function scramble(text: string): string {
   return chars.join('');
 }
 
+/** Configurable timings for the turret launch animation. */
+interface LaunchTimings {
+  /** Total sequence target for a full level (ms). */
+  sequenceTarget: number;
+  /** Single-bubble travel duration (ms). */
+  travel: number;
+  /** Next launch begins at this fraction of the previous flight. */
+  overlap: number;
+  /** Reduced-motion fade-in duration per bubble (ms). */
+  reducedFade: number;
+  /** Reduced-motion stagger between bubbles (ms). */
+  reducedStagger: number;
+}
+
 interface Position {
   x: number;
   y: number;
@@ -33,6 +47,10 @@ export class Board {
   /** Bumped whenever the level state is replaced (restart, new level, new run):
    *  in-flight validation attempts belonging to the old generation abort. */
   private generation = 0;
+  /** True while the turret launch sequence is playing on a fresh level. */
+  private launching = false;
+  /** Turret element during a launch sequence. */
+  private turret: HTMLElement | null = null;
   /** Called to validate a drop; the board awaits the result for feedback. */
   onAttempt: (a: number, b: number) => Promise<AttemptResult> = async () => 'invalid';
   /** Called after the state has changed (for HUD updates). */
@@ -95,6 +113,105 @@ export class Board {
    */
   resetLayout() {
     this.positions.clear();
+  }
+
+  isLaunching(): boolean {
+    return this.launching;
+  }
+
+  /**
+   * Turret launch sequence for a fresh level. Positions were already computed
+   * by scatterLayout; this animates each bubble from the turret to its
+   * assigned destination, one after another (with flight overlap), then
+   * resolves once every bubble has settled and the board is playable.
+   *
+   * Generation-guarded: a restart, menu exit, or level change during the
+   * sequence aborts remaining steps safely.
+   */
+  async launchSequence(state: GameState, timings: LaunchTimings): Promise<void> {
+    if (this.launching) return;
+    this.launching = true;
+    const gen = this.generation;
+    const rect = () => this.container.getBoundingClientRect();
+    const turretX = () => rect().width / 2 - 45;
+    const turretY = () => rect().height - 70;
+
+    try {
+      // Stage: hide all bubbles at the turret mouth.
+      for (const bubble of state.bubbles) {
+        const el = this.bubbleEl(bubble.id);
+        if (!el) continue;
+        el.classList.add('pre-launch');
+        this.place(el, { x: turretX(), y: turretY() });
+      }
+
+      const reduced = document.body.classList.contains('reduced-motion');
+      const n = state.bubbles.length;
+
+      if (reduced) {
+        // Accessible alternative: rapid staggered fade-in at destinations.
+        await this.waitWhilePaused(200);
+        for (const bubble of state.bubbles) {
+          const el = this.bubbleEl(bubble.id);
+          if (!el || gen !== this.generation) continue;
+          const pos = this.positions.get(bubble.id);
+          if (!pos) continue;
+          el.classList.add('reduced-appear');
+          this.place(el, pos);
+          el.classList.remove('pre-launch');
+          await this.waitWhilePaused(timings.reducedStagger);
+        }
+        await this.waitWhilePaused(timings.reducedFade);
+      } else {
+        const interval = Math.max(
+          200,
+          Math.min(
+            Math.round((timings.sequenceTarget - timings.travel) / Math.max(1, n - 1)),
+            Math.round(timings.travel * timings.overlap)
+          )
+        );
+        for (const bubble of state.bubbles) {
+          if (gen !== this.generation) return;
+          const el = this.bubbleEl(bubble.id);
+          const pos = this.positions.get(bubble.id);
+          if (!el || !pos) continue;
+          // Turret puff.
+          this.turret?.classList.remove('puff');
+          void (this.turret as HTMLElement).offsetWidth; // restart animation
+          this.turret?.classList.add('puff');
+          // Stage at turret, then fly to destination with ease-out.
+          this.place(el, { x: turretX(), y: turretY() });
+          el.classList.remove('pre-launch');
+          el.classList.add('in-flight');
+          this.place(el, pos);
+          await this.waitWhilePaused(interval);
+        }
+        // Wait for the last flight to finish before resolving.
+        await this.waitWhilePaused(timings.travel - interval);
+      }
+    } finally {
+      if (gen === this.generation) {
+        for (const bubble of state.bubbles) {
+          this.bubbleEl(bubble.id)?.classList.remove('in-flight', 'pre-launch', 'reduced-appear');
+        }
+        this.container.classList.remove('launch-active');
+        this.turret?.classList.remove('active', 'puff');
+        this.turret?.remove();
+        this.turret = null;
+      }
+      this.launching = false;
+    }
+  }
+
+  /** Show the turret element (bottom-center, non-interactive). */
+  private showTurret(): HTMLElement {
+    if (this.turret && this.turret.parentElement === this.container) return this.turret;
+    this.turret?.remove();
+    const el = document.createElement('div');
+    el.className = 'turret';
+    this.container.appendChild(el);
+    this.turret = el;
+    return el;
   }
 
   /**
@@ -205,7 +322,11 @@ export class Board {
    */
   render(state: GameState, keepIds?: Set<number>) {
     // A bubble without a position means a fresh level: scatter everything anew.
-    if (state.bubbles.length > 0 && state.bubbles.some((b) => !this.positions.has(b.id))) {
+    if (
+      state.bubbles.length > 0 &&
+      !this.launching &&
+      state.bubbles.some((b) => !this.positions.has(b.id))
+    ) {
       const keep = new Map<number, Position>();
       for (const id of keepIds ?? []) {
         const p = this.positions.get(id);
