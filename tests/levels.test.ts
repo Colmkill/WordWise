@@ -222,9 +222,10 @@ describe('concept validation', () => {
     const a = baseLevel();
     const b = baseLevel();
     b.id = 2;
-    b.topics[1].concept = 'alpha';
-    b.topics[1].category = 'ALPHA';
-    b.topics[1].words = ['seven', 'eight', 'nine', 'ten'];
+    // Same concept refs as level a, but a fresh word list:
+    // concept reuse across levels is the whole point of the registry.
+    b.topics[0].words = ['seven', 'eight', 'nine', 'ten'];
+    b.topics[1].words = ['eleven', 'twelve', 'thirteen'];
     expect(validateAllConcepts([a, b], registry)).toBeUndefined();
   });
 
