@@ -249,8 +249,10 @@ describe('shipped concept registry', () => {
 });
 
 describe('phase C content expansion', () => {
-  it('ships twelve levels', () => {
-    expect(LEVELS).toHaveLength(12);
+  it('ships at least twelve levels with contiguous ids', () => {
+    expect(LEVELS.length).toBeGreaterThanOrEqual(12);
+    // Append-only guarantee: ids are exactly 1..N in order.
+    LEVELS.forEach((level, i) => expect(level.id).toBe(i + 1));
   });
 
   it('reuses concepts across levels with fresh word lists', () => {
