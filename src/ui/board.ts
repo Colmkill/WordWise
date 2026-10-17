@@ -89,6 +89,80 @@ export class Board {
     this.hideHint();
   }
 
+  /**
+   * Forget all bubble positions. Call when a level starts, restarts, or changes
+   * so the next render computes a fresh scattered arrangement.
+   */
+  resetLayout() {
+    this.positions.clear();
+  }
+
+  /**
+   * Assign fresh positions for all bubbles: grid slots with jitter, shuffled,
+   * with a few passes that swap same-topic neighbours apart so a topic's words
+   * never start clustered together (they still may, by chance, in tiny boards).
+   */
+  private scatterLayout(state: GameState) {
+    const rect = this.container.getBoundingClientRect();
+    const n = state.bubbles.length;
+    if (n === 0) return;
+
+    const cols = Math.ceil(Math.sqrt(n * (rect.width / Math.max(1, rect.height))));
+    const rows = Math.ceil(n / Math.max(1, cols));
+    const cellW = rect.width / Math.max(1, cols);
+    const cellH = rect.height / Math.max(1, rows);
+
+    const slots: Position[] = [];
+    for (let r0 = 0; r0 < rows; r0++) {
+      for (let c = 0; c < cols; c++) {
+        if (slots.length >= n) break;
+        slots.push({
+          x: Math.min(rect.width - 100, (c + 0.5) * cellW + (Math.random() - 0.5) * cellW * 0.4),
+          y: Math.min(rect.height - 60, (r0 + 0.5) * cellH + (Math.random() - 0.5) * cellH * 0.4)
+        });
+      }
+    }
+    // Shuffle the slots.
+    for (let i = slots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+    }
+
+    // Assign slots to bubbles in order, then improve: move same-topic bubbles apart.
+    const order = [...state.bubbles];
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    order.forEach((b, i) => this.positions.set(b.id, { ...slots[i % slots.length] }));
+
+    // A few improvement passes: for each same-topic pair that is closer than
+    // 2 cell widths, swap one of them with a random other bubble if that
+    // reduces same-topic proximity.
+    const topicOf = (id: number) => state.bubbles.find((b) => b.id === id)?.topicId;
+    const dist = (a: Position, b: Position) => Math.hypot(a.x - b.x, a.y - b.y);
+    const minSep = Math.min(cellW, cellH) * 2;
+    for (let pass = 0; pass < 6; pass++) {
+      let improved = false;
+      for (const a of order) {
+        for (const b of order) {
+          if (a.id >= b.id || a.topicId !== b.topicId) continue;
+          const pa = this.positions.get(a.id)!;
+          const pb = this.positions.get(b.id)!;
+          if (dist(pa, pb) >= minSep) continue;
+          // Try swapping a's position with a random different-topic bubble.
+          const other = order[Math.floor(Math.random() * order.length)];
+          if (other.topicId === a.topicId) continue;
+          const po = this.positions.get(other.id)!;
+          this.positions.set(a.id, po);
+          this.positions.set(other.id, pa);
+          improved = true;
+        }
+      }
+      if (!improved) break;
+    }
+  }
+
   /** Cancel the in-flight drag: bubble snaps back; no attempt is made. */
   private cancelActiveDrag() {
     if (this.activeDrag) {
@@ -102,6 +176,17 @@ export class Board {
    * mid-reveal) are left in the DOM even though they left the state.
    */
   render(state: GameState, keepIds?: Set<number>) {
+    // A bubble without a position means a fresh level: scatter everything anew.
+    if (state.bubbles.length > 0 && state.bubbles.some((b) => !this.positions.has(b.id))) {
+      const keep = new Map<number, Position>();
+      for (const id of keepIds ?? []) {
+        const p = this.positions.get(id);
+        if (p) keep.set(id, p);
+      }
+      this.positions.clear();
+      for (const [id, p] of keep) this.positions.set(id, p);
+      this.scatterLayout(state);
+    }
     for (const el of Array.from(this.container.querySelectorAll('.bubble'))) {
       const id = Number((el as HTMLElement).dataset.id);
       if (state.bubbles.some((b) => b.id === id)) continue;

@@ -138,6 +138,7 @@ function showLevelSelect() {
       replay = true;
       levelIndex = LEVELS.findIndex((l) => l.id === id);
       state = startReplay(id);
+      resetLayoutBeforeRender();
       showGameScreen();
     });
   });
@@ -265,6 +266,7 @@ function startGame(idx: number, lives: number) {
   replay = false;
   levelIndex = idx;
   state = startLevel(LEVELS[idx], lives);
+  resetLayoutBeforeRender();
   showGameScreen();
 }
 
@@ -429,6 +431,7 @@ function checkLevelComplete() {
     board.invalidatePending();
     state = next;
     levelIndex = LEVELS.findIndex((l) => l.id === state.levelId);
+    board.resetLayout();
     celebrate(`Level ${state.levelId - 1} Complete! 🎉`);
     render();
   }, LEVEL_COMPLETE_PAUSE_MS);
@@ -495,6 +498,7 @@ function menuView(overlay: HTMLElement) {
         overlay.remove();
         board.invalidatePending();
         state = replay ? startReplay(currentLevel().id) : startLevel(currentLevel(), state.lives);
+        board.resetLayout();
         render();
         setPaused(false);
       }
