@@ -68,7 +68,7 @@ export const WORD_BANKS: Record<string, string[]> = {
   cooking: ['simmer', 'saute', 'braise', 'roast', 'poach', 'blanch', 'marinate', 'garnish', 'knead', 'reduce', 'seasoning', 'deglaze'],
   courtroom: ['judge', 'jury', 'barrister', 'witness', 'verdict', 'testimony', 'objection', 'evidence', 'cross-examination', 'defendant', 'prosecution', 'gavel'],
   cricket: ['wicket', 'stumps', 'bails', 'crease', 'innings', 'googly', 'yorker', 'sixer', 'boundary', 'slip', 'maiden', 'lbw'],
-  cycling: ['peloton', 'chainring', 'puncture', 'velodrome', 'cadence', 'drafting', 'time trial'],
+  cycling: [ 'peloton', 'chainring', 'puncture', 'velodrome', 'cadence', 'time trial', 'breakaway', 'cleats', 'sprint', 'climb', 'descent', 'echelon', 'yellow jersey', 'stage race'],
   dairy: ['buttermilk', 'cream', 'yoghurt', 'butter', 'ghee', 'casein', 'skim milk', 'milk powder', 'clotted cream'],
   dance: ['waltz', 'tango', 'foxtrot', 'salsa', 'samba', 'rumba', 'jive', 'cha-cha', 'pasodoble', 'tap dance', 'breakdance', 'ballroom'],
   dentist: ['molar', 'incisor', 'canine', 'enamel', 'dentine', 'plaque', 'floss', 'cavity', 'filling', 'braces', 'root canal'],
