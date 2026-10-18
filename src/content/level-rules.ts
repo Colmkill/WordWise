@@ -41,14 +41,17 @@ export const THRESHOLDS: Record<number, number> = {
 
 /**
  * Editorial difficulty rating (1 = everyday, 5 = specialist) for every
- * banked concept. Drives which band a concept may appear in.
+ * banked concept. Drives which band a concept may appear in. Every concept
+ * with a word bank MUST have an entry here, or the generator refuses to run.
  */
 export const CONCEPT_DIFFICULTY: Record<string, number> = {
   furniture: 1, fruit: 1, weather: 1, colours: 1, animals: 1,
-  music: 2, jobs: 2, sports: 2, kitchen: 2, travel: 2, body: 2, coffee: 2, school: 2, cinema: 2,
+  music: 2, jobs: 2, sports: 2, kitchen: 2, travel: 2, body: 2, coffee: 2, school: 2, cinema: 2, airport: 2,
   night: 3, ocean: 3, camping: 3, money: 3, garden: 3, winter: 3, mail: 3, baking: 3,
+  athletics: 3, archery: 3, autumn: 3,
   doctor: 4, orchestra: 4, chess: 4, volcano: 4, falconry: 4, apiary: 4, cartography: 4,
   numismatics: 4, oenology: 4, alchemy: 4, taxonomy: 4,
+  anatomy: 4, archaeology: 4, architecture: 4, astronomy: 4, algebra: 4, aerospace: 4,
   sailing: 5, typography: 5, horology: 5, mycology: 5, glassblowing: 5
 };
 
