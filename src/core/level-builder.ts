@@ -58,6 +58,17 @@ function drawWords(pool: string[], n: number, rand: () => number): string[] {
   return idx.slice(0, n).map((i) => pool[i]);
 }
 
+/** Registry hint for a concept, narrowed to a required string. The generator
+ *  never emits a topic without a hint; concepts missing one are filtered
+ *  out during eligibility. */
+function hintFor(concept: string): string {
+  const hint = TOPIC_CONCEPTS[concept]?.hint;
+  if (!hint) {
+    throw new Error(`Concept "${concept}" has no hint in the concept registry`);
+  }
+  return hint;
+}
+
 /**
  * Generate levels procedurally from the word banks and rule bands. There is
  * no per-level authoring: concepts, word counts and word lists are all
@@ -171,7 +182,7 @@ export function generateLevels(
         concept: chosen,
         category: meta.category,
         words,
-        hint: meta.hint,
+        hint: hintFor(chosen),
         difficulty: CONCEPT_DIFFICULTY[chosen]
       });
     }
