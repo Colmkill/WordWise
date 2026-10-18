@@ -45,7 +45,6 @@ export const WORD_BANKS: Record<string, string[]> = {
   botany: ['stamen', 'pistil', 'sepal', 'petal', 'chlorophyll', 'rhizome', 'xylem', 'phloem', 'germination', 'pollination', 'cotyledon', 'herbarium'],
   brewing: ['malt', 'hops', 'fermentation', 'mash', 'wort', 'lager', 'ale', 'keg', 'barley', 'hydrometer', 'bottling'],
   bridges: ['arch', 'span', 'abutment', 'pier', 'cable', 'suspension', 'truss', 'girder', 'deck', 'viaduct', 'drawbridge'],
-  
   calendar: ['weekday', 'weekend', 'fortnight', 'month', 'leap year', 'deadline', 'anniversary', 'appointment', 'reminder', 'datebook', 'schedule', 'almanac'],
   camping: ['tent', 'torch', 'marshmallow', 'campfire', 'canteen', 'compass', 'hammock', 'ranger', 'wilderness'],
   candy: ['lollipop', 'toffee', 'fudge', 'caramel', 'gummy bear', 'jellybean', 'licorice', 'marshmallow', 'taffy', 'bonbon', 'nougat', 'sherbet'],
@@ -70,7 +69,6 @@ export const WORD_BANKS: Record<string, string[]> = {
   courtroom: ['judge', 'jury', 'barrister', 'witness', 'verdict', 'testimony', 'objection', 'evidence', 'cross-examination', 'defendant', 'prosecution', 'gavel'],
   cricket: ['wicket', 'stumps', 'bails', 'crease', 'innings', 'googly', 'yorker', 'sixer', 'boundary', 'slip', 'maiden', 'lbw'],
   cycling: ['pedal', 'derailleur', 'handlebar', 'saddle', 'peloton', 'spokes', 'chainring', 'puncture', 'velodrome', 'cadence', 'drafting', 'time trial'],
-  
   doctor: ['stethoscope', 'waiting room', 'prescription', 'syringe', 'bandage', 'thermometer', 'appointment', 'vaccination', 'scalpel'],
   falconry: ['jess', 'hood', 'creance', 'mews', 'lure', 'bewit', 'eyas', 'haggard'],
   furniture: ['chair', 'table', 'sofa', 'bed', 'desk', 'wardrobe', 'bookcase', 'armchair', 'nightstand', 'ottoman', 'bench'],
