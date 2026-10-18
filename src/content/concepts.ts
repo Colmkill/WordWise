@@ -13,6 +13,8 @@ export interface TopicConcept {
   slug: string;
   /** Canonical category name revealed on completion. */
   category: string;
+  /** Reusable discovery hint: assists without revealing the category. */
+  hint?: string;
   /** Optional authoring notes (provenance, review reminders). */
   notes?: string;
 }
