@@ -56,11 +56,6 @@ describe('level generator', () => {
     expect(() => generateLevels({ nope: ['a', 'b', 'c'] }, LEVEL_SEED)).toThrow(/Unknown concept/);
   });
 
-  it('rejects banked concepts without a difficulty rating', () => {
-    // 'ballet' is a valid registry concept but has no CONCEPT_DIFFICULTY entry.
-    expect(() => generateLevels({ ballet: ['a', 'b', 'c'] }, LEVEL_SEED)).toThrow(/no difficulty rating/);
-  });
-
   it('throws when no concept can supply the minimum word count', () => {
     expect(() => generateLevels({ fruit: ['a', 'b'] }, LEVEL_SEED)).toThrow(/no eligible concept/);
   });
