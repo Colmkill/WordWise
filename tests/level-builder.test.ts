@@ -57,9 +57,8 @@ describe('level generator', () => {
   });
 
   it('rejects banked concepts without a difficulty rating', () => {
-    const banks = { ...WORD_BANKS, furniture: WORD_BANKS.furniture };
-    delete (banks as Record<string, unknown>).furniture;
-    expect(() => generateLevels({ colour: ['a', 'b', 'c'] }, LEVEL_SEED)).not.toThrow();
+    // 'aerospace' is a valid registry concept but has no bank difficulty.
+    expect(() => generateLevels({ aerospace: ['a', 'b', 'c'] }, LEVEL_SEED)).toThrow(/no difficulty rating/);
   });
 
   it('throws when no concept can supply the minimum word count', () => {
