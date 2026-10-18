@@ -1,25 +1,6 @@
 import type { Level, Topic } from '../types';
 import { TOPIC_CONCEPTS } from '../content/concepts';
-import { bandFor } from '../content/level-rules';
-
-/** Per-instance curation: which concept appears in a level, with which hint
- *  and difficulty. Words are NOT authored here; the builder draws them from
- *  the concept's word bank. */
-export interface TopicBlueprint {
-  id: string;
-  concept: string;
-  hint: string;
-  difficulty: number;
-  status?: 'draft' | 'reviewed';
-  /** How many words to draw from the concept's bank for this instance. */
-  count: number;
-}
-
-export interface LevelBlueprint {
-  id: number;
-  mistakeThreshold: number;
-  topics: TopicBlueprint[];
-}
+import { BANDS, CONCEPT_DIFFICULTY, THRESHOLDS, bandFor } from '../content/level-rules';
 
 /** Deterministic string hash (FNV-1a). */
 function hashString(s: string): number {
@@ -43,6 +24,30 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** Words in a bank that may still be drawn for one topic instance:
+ *  the band's familiarity window, relaxed toward the deeper end of the
+ *  bank until enough words are available, minus words already drawn for this
+ *  concept in earlier levels (reuse disjointness) and words already used by
+ *  another topic in this level (a duplicate is skipped and the next
+ *  eligible word substitutes). Returns fewer than minCount words only when
+ *  the bank is exhausted; callers treat that as ineligibility. */
+export function eligibleWords(
+  bank: string[],
+  excluded: Set<string>,
+  usedInLevel: Set<string>,
+  window: [number, number],
+  minCount: number
+): string[] {
+  let hi = Math.min(window[1], bank.length);
+  const pick = () => bank.slice(window[0], hi).filter((w) => !excluded.has(w) && !usedInLevel.has(w));
+  let pool = pick();
+  while (pool.length < minCount && hi < bank.length) {
+    hi++;
+    pool = pick();
+  }
+  return pool;
+}
+
 /** Draw n words from the eligible pool, deterministically for this seed. */
 function drawWords(pool: string[], n: number, rand: () => number): string[] {
   const idx = pool.map((_, i) => i);
@@ -54,107 +59,125 @@ function drawWords(pool: string[], n: number, rand: () => number): string[] {
 }
 
 /**
- * Build concrete levels from blueprints + word banks. Deterministic: the same
- * blueprints, banks and seed always produce identical levels (selection never
- * changes across renders, restarts or replays).
+ * Generate levels procedurally from the word banks and rule bands. There is
+ * no per-level authoring: concepts, word counts and word lists are all
+ * derived. Deterministic: the same banks, seed and rule tables always
+ * produce identical levels (selection never changes across renders,
+ * restarts or replays).
  *
- * Word selection per topic instance:
- * 1. start from the band's familiarity window of the concept's bank;
- * 2. exclude words already drawn for this concept in earlier levels (reuse
- *    disjointness) and words already used by another topic in this level
- *    (exact-duplicate exclusion only: a duplicate is skipped and the next
- *    eligible word substitutes);
- * 3. relax the window's rank ceiling toward the bank's deeper end until the
- *    requested count is available;
- * 4. seeded draw.
- * Insufficient banks throw with the concept, required count and availability.
+ * Per level, per topic slot:
+ * 1. collect eligible concepts: difficulty inside the band, reused at most
+ *    once every three levels, bank able to supply the minimum word count;
+ *    a reserve rule keeps scarce hard concepts (difficulty >= 4 with fewer
+ *    than 6 unused words) available for the final band;
+ * 2. pick the concept with the lowest score: never-used first, then lowest
+ *    difficulty, tie-broken by seeded randomness;
+ * 3. choose a word count inside the band's range (seeded), capped by what
+ *    the bank can still supply;
+ * 4. draw the words from the most familiar eligible ranks.
+ * Infeasible requests throw with the level, concept and counts involved.
  */
-export function buildLevels(
-  blueprints: LevelBlueprint[],
+export function generateLevels(
   banks: Record<string, string[]>,
-  seed: number
+  seed: number,
+  levelCount: number = Object.keys(THRESHOLDS).length
 ): Level[] {
-  const problems: string[] = [];
-  const warnings: string[] = [];
+  for (const concept of Object.keys(banks)) {
+    if (!TOPIC_CONCEPTS[concept]) {
+      throw new Error(`Unknown concept "${concept}": not in the concept registry`);
+    }
+    if (CONCEPT_DIFFICULTY[concept] === undefined) {
+      throw new Error(`Concept "${concept}" has no difficulty rating (see CONCEPT_DIFFICULTY in level-rules.ts)`);
+    }
+  }
+
   const usedByConcept = new Map<string, Set<string>>();
   const lastLevelOf = new Map<string, number>();
+  const lastBandIndex = BANDS.length - 1;
   const levels: Level[] = [];
 
-  for (const bp of blueprints) {
-    const band = bandFor(bp.id);
-    if (!band) throw new Error(`Level ${bp.id}: no rule band covers this level number`);
-    if (bp.topics.length !== band.topics) {
-      problems.push(`Level ${bp.id}: has ${bp.topics.length} topics, band requires ${band.topics}`);
+  for (let levelId = 1; levelId <= levelCount; levelId++) {
+    const band = bandFor(levelId);
+    if (!band) throw new Error(`Level ${levelId}: no rule band covers this level number`);
+    const threshold = THRESHOLDS[levelId];
+    if (threshold === undefined) {
+      throw new Error(`Level ${levelId}: no mistake threshold configured (see THRESHOLDS in level-rules.ts)`);
     }
-    const usedWords = new Set<string>();
+    const isFinalBand = BANDS.indexOf(band) === lastBandIndex;
+    const usedInLevel = new Set<string>();
     const topics: Topic[] = [];
 
-    for (const t of bp.topics) {
-      const concept = TOPIC_CONCEPTS[t.concept];
-      if (!concept) throw new Error(`Level ${bp.id}: unknown concept "${t.concept}"`);
-      const last = lastLevelOf.get(t.concept);
-      if (last !== undefined && bp.id - last < 3) {
-        problems.push(
-          `Level ${bp.id}: concept "${t.concept}" reused too soon (last level ${last}; spacing must be >= 3)`
-        );
+    for (let slot = 0; slot < band.topics; slot++) {
+      const eligible: string[] = [];
+      for (const concept of Object.keys(banks)) {
+        const meta = TOPIC_CONCEPTS[concept];
+        if (!meta || !meta.hint) continue;
+        const difficulty = CONCEPT_DIFFICULTY[concept];
+        if (difficulty < band.difficulty[0] || difficulty > band.difficulty[1]) continue;
+        const last = lastLevelOf.get(concept);
+        if (last !== undefined && levelId - last < 3) continue;
+        const bank = banks[concept];
+        const excluded = usedByConcept.get(concept) ?? new Set<string>();
+        if (!isFinalBand && difficulty >= 4 && bank.length - excluded.size < 6) continue;
+        const pool = eligibleWords(bank, excluded, usedInLevel, band.window, band.countRange[0]);
+        if (pool.length < band.countRange[0]) continue;
+        eligible.push(concept);
       }
-      if (t.difficulty < band.difficulty[0] || t.difficulty > band.difficulty[1]) {
-        problems.push(
-          `Level ${bp.id}: topic "${t.id}" difficulty ${t.difficulty} outside band [${band.difficulty[0]}-${band.difficulty[1]}]`
-        );
-      }
-      const bank = banks[t.concept];
-      if (!bank) throw new Error(`Level ${bp.id}: no word bank for concept "${t.concept}"`);
-
-      const excluded = usedByConcept.get(t.concept) ?? new Set<string>();
-      const duplicateSkips = bank.filter((w) => usedWords.has(w));
-      if (duplicateSkips.length > 0) {
-        warnings.push(
-          `Level ${bp.id}: "${duplicateSkips.join('", "')}" in the ${t.concept} bank already used by another topic this level - skipped`
-        );
-      }
-
-      let lo = Math.min(band.window[0], Math.max(0, bank.length - 1));
-      let hi = Math.min(band.window[1], bank.length);
-      const pick = () => bank.slice(lo, hi).filter((w) => !excluded.has(w) && !usedWords.has(w));
-      let eligible = pick();
-      while (eligible.length < t.count && hi < bank.length) {
-        hi++;
-        eligible = pick();
-      }
-      if (eligible.length < t.count) {
+      if (eligible.length === 0) {
         throw new Error(
-          `Level ${bp.id} topic "${t.id}": concept "${t.concept}" has only ${eligible.length} eligible word(s), needs ${t.count} (bank: ${bank.length}, excluded by reuse: ${excluded.size}, used in level: ${usedWords.size})`
+          `Level ${levelId}: no eligible concept for topic ${slot + 1} (difficulty ${band.difficulty[0]}-${band.difficulty[1]}, spacing >= 3, bank supply exhausted?)`
         );
       }
 
-      const rand = mulberry32(hashString(`${seed}:${bp.id}:${t.concept}:${t.count}`));
-      const words = drawWords(eligible, t.count, rand);
+      const pickRand = mulberry32(hashString(`${seed}:${levelId}:pick:${slot}`));
+      let chosen = eligible[0];
+      let bestScore = Infinity;
+      for (const concept of eligible) {
+        const score = (usedByConcept.has(concept) ? 10 : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
+        if (score < bestScore) {
+          bestScore = score;
+          chosen = concept;
+        }
+      }
+
+      const meta = TOPIC_CONCEPTS[chosen];
+      const bank = banks[chosen];
+      const excluded = usedByConcept.get(chosen) ?? new Set<string>();
+      const [countLo, countHi] = band.countRange;
+      let count = countLo;
+      if (countHi > countLo) {
+        const countRand = mulberry32(hashString(`${seed}:${levelId}:${chosen}:count`));
+        count = countLo + Math.floor(countRand() * (countHi - countLo + 1));
+      }
+      const pool = eligibleWords(bank, excluded, usedInLevel, band.window, count);
+      count = Math.min(count, pool.length);
+      if (pool.length < countLo || count < countLo) {
+        throw new Error(
+          `Level ${levelId} topic ${slot + 1}: concept "${chosen}" has only ${pool.length} eligible word(s), needs ${countLo} (bank: ${bank.length}, excluded by reuse: ${excluded.size}, used in level: ${usedInLevel.size})`
+        );
+      }
+
+      const rand = mulberry32(hashString(`${seed}:${levelId}:${chosen}:${count}`));
+      const words = drawWords(pool, count, rand);
       for (const w of words) {
         excluded.add(w);
-        usedWords.add(w);
+        usedInLevel.add(w);
       }
-      usedByConcept.set(t.concept, excluded);
-      lastLevelOf.set(t.concept, bp.id);
+      usedByConcept.set(chosen, excluded);
+      lastLevelOf.set(chosen, levelId);
 
-      const topic: Topic = {
-        id: t.id,
-        concept: t.concept,
-        category: concept.category,
+      topics.push({
+        id: `${chosen}-${levelId}`,
+        concept: chosen,
+        category: meta.category,
         words,
-        hint: t.hint,
-        difficulty: t.difficulty
-      };
-      if (t.status) topic.status = t.status;
-      topics.push(topic);
+        hint: meta.hint,
+        difficulty: CONCEPT_DIFFICULTY[chosen]
+      });
     }
 
-    levels.push({ id: bp.id, mistakeThreshold: bp.mistakeThreshold, topics });
+    levels.push({ id: levelId, mistakeThreshold: threshold, topics });
   }
 
-  if (problems.length > 0) {
-    throw new Error(`Level rule violations:\n- ${problems.join('\n- ')}`);
-  }
-  for (const w of warnings) console.warn(`[level-builder] ${w}`);
   return levels;
 }
