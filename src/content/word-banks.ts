@@ -16,9 +16,21 @@
  */
 
 export const WORD_BANKS: Record<string, string[]> = {
+
+  aerospace: ['rocket', 'satellite', 'spaceship', 'orbit', 'thruster', 'cockpit', 'fuselage', 'payload', 'spacecraft', 'turbine', 'airfoil', 'reentry'],
+  airport: ['runway', 'terminal', 'hangar', 'baggage', 'boarding pass', 'departure', 'arrival', 'check-in', 'customs', 'concourse', 'taxiway', 'carousel'],
   alchemy: ['alembic', 'calcination', 'quintessence', 'crucible', 'elixir', 'tincture', 'vitriol', 'chrysopoeia'],
+  algebra: ['equation', 'variable', 'coefficient', 'polynomial', 'quadratic', 'exponent', 'factor', 'inequality', 'constant', 'numerator', 'denominator', 'function'],
+  anatomy: ['skeleton', 'muscle', 'tendon', 'ligament', 'cartilage', 'artery', 'vein', 'organ', 'nerve', 'skull', 'sternum', 'diaphragm'],
   animals: ['lion', 'shark', 'eagle', 'fox', 'deer', 'trout', 'bear', 'wolf', 'rabbit', 'dolphin', 'snake', 'frog'],
   apiary: ['smoker', 'extractor', 'propolis', 'hive', 'nectar', 'queen bee', 'drone', 'swarm', 'foundation'],
+  archaeology: ['excavation', 'artifact', 'fossil', 'stratum', 'pottery', 'relic', 'sarcophagus', 'inscription', 'ruins', 'shard', 'tomb', 'trowel'],
+  archery: ['quiver', 'bowstring', 'bullseye', 'arrowhead', 'fletching', 'longbow', 'crossbow', 'nock', 'draw', 'target', 'release', 'limb'],
+  architecture: ['blueprint', 'façade', 'column', 'archway', 'dome', 'cornice', 'balustrade', 'foundation', 'atrium', 'vault', 'pediment', 'buttress'],
+  astronomy: ['nebula', 'galaxy', 'pulsar', 'quasar', 'eclipse', 'constellation', 'supernova', 'asteroid', 'comet', 'telescope', 'solstice', 'light-year'],
+  athletics: ['sprint', 'hurdles', 'relay', 'marathon', 'javelin', 'discus', 'shot put', 'long jump', 'high jump', 'pole vault', 'decathlon', 'steeplechase'],
+  autumn: ['harvest', 'foliage', 'acorn', 'conker', 'pumpkin', 'bonfire', 'equinox', 'chestnut', 'leaf litter', 'mushroom', 'migration', 'scarecrow'],
+  
   baking: ['flour', 'yeast', 'rolling pin', 'dough', 'whisk', 'pastry', 'preheat', 'sourdough', 'crumb'],
   body: ['elbow', 'ankle', 'thumb', 'wrist', 'shoulder', 'heel', 'knee', 'spine', 'palm', 'rib', 'hip', 'chin'],
   camping: ['tent', 'torch', 'marshmallow', 'campfire', 'canteen', 'compass', 'hammock', 'ranger', 'wilderness'],
