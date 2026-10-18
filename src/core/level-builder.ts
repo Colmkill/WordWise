@@ -48,6 +48,11 @@ export function eligibleWords(
   return pool;
 }
 
+/** Score penalty for a concept already used in an earlier level. Small
+ *  enough that an easy used concept beats a harder fresh one, so the
+ *  generated progression keeps reusing familiar topics with fresh words. */
+const REUSE_PENALTY = 2;
+
 /** Draw n words from the eligible pool, deterministically for this seed. */
 function drawWords(pool: string[], n: number, rand: () => number): string[] {
   const idx = pool.map((_, i) => i);
@@ -81,8 +86,10 @@ function hintFor(concept: string): string {
  *    once every three levels, bank able to supply the minimum word count;
  *    a reserve rule keeps scarce hard concepts (difficulty >= 4 with fewer
  *    than 6 unused words) available for the final band;
- * 2. pick the concept with the lowest score: never-used first, then lowest
- *    difficulty, tie-broken by seeded randomness;
+ * 2. pick the concept with the lowest score: lowest difficulty first, with
+ *    a small penalty for concepts already used elsewhere (so familiar
+ *    topics recur with fresh word lists instead of every level reaching
+ *    for an untouched concept), tie-broken by seeded randomness;
  * 3. choose a word count inside the band's range (seeded), capped by what
  *    the bank can still supply;
  * 4. draw the words from the most familiar eligible ranks.
@@ -144,7 +151,7 @@ export function generateLevels(
       let chosen = eligible[0];
       let bestScore = Infinity;
       for (const concept of eligible) {
-        const score = (usedByConcept.has(concept) ? 10 : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
+        const score = (usedByConcept.has(concept) ? REUSE_PENALTY : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
         if (score < bestScore) {
           bestScore = score;
           chosen = concept;
