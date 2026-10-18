@@ -24,6 +24,10 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** Score penalty for a concept already used in an earlier level. Small
+ *  enough that an easy used concept beats a harder fresh one. */
+const REUSE_PENALTY = 2;
+
 /** Words in a bank that may still be drawn for one topic instance:
  *  the band's familiarity window, relaxed toward the deeper end of the
  *  bank until enough words are available, minus words already drawn for this
@@ -47,11 +51,6 @@ export function eligibleWords(
   }
   return pool;
 }
-
-/** Score penalty for a concept already used in an earlier level. Small
- *  enough that an easy used concept beats a harder fresh one, so the
- *  generated progression keeps reusing familiar topics with fresh words. */
-const REUSE_PENALTY = 2;
 
 /** Draw n words from the eligible pool, deterministically for this seed. */
 function drawWords(pool: string[], n: number, rand: () => number): string[] {
@@ -86,13 +85,17 @@ function hintFor(concept: string): string {
  *    once every three levels, bank able to supply the minimum word count;
  *    a reserve rule keeps scarce hard concepts (difficulty >= 4 with fewer
  *    than 6 unused words) available for the final band;
- * 2. pick the concept with the lowest score: lowest difficulty first, with
- *    a small penalty for concepts already used elsewhere (so familiar
- *    topics recur with fresh word lists instead of every level reaching
- *    for an untouched concept), tie-broken by seeded randomness;
- * 3. choose a word count inside the band's range (seeded), capped by what
+ * 2. from level 4 onward, the first slot of each level revisits a
+ *    previously-used concept when one is eligible. Reuse is structural,
+ *    not score-dependent: however many fresh banks exist, familiar topics
+ *    keep recurring with fresh word lists (guaranteeing the reuse
+ *    invariant);
+ * 3. pick the concept with the lowest score: lowest difficulty first, with
+ *    a small penalty for already-used concepts, tie-broken by seeded
+ *    randomness;
+ * 4. choose a word count inside the band's range (seeded), capped by what
  *    the bank can still supply;
- * 4. draw the words from the most familiar eligible ranks.
+ * 5. draw the words from the most familiar eligible ranks.
  * Infeasible requests throw with the level, concept and counts involved.
  */
 export function generateLevels(
@@ -141,16 +144,24 @@ export function generateLevels(
         if (pool.length < band.countRange[0]) continue;
         eligible.push(concept);
       }
-      if (eligible.length === 0) {
+
+      // Structural revisit: from level 4 on, slot 0 prefers a concept that
+      // already appeared in an earlier level (fresh words, same topic).
+      const candidates =
+        slot === 0 && levelId >= 4
+          ? eligible.filter((c) => usedByConcept.has(c))
+          : eligible;
+      const pickFrom = candidates.length > 0 ? candidates : eligible;
+      if (pickFrom.length === 0) {
         throw new Error(
           `Level ${levelId}: no eligible concept for topic ${slot + 1} (difficulty ${band.difficulty[0]}-${band.difficulty[1]}, spacing >= 3, bank supply exhausted?)`
         );
       }
 
       const pickRand = mulberry32(hashString(`${seed}:${levelId}:pick:${slot}`));
-      let chosen = eligible[0];
+      let chosen = pickFrom[0];
       let bestScore = Infinity;
-      for (const concept of eligible) {
+      for (const concept of pickFrom) {
         const score = (usedByConcept.has(concept) ? REUSE_PENALTY : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
         if (score < bestScore) {
           bestScore = score;
