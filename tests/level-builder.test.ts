@@ -65,7 +65,13 @@ describe('level builder', () => {
 
   it('rejects concepts reused closer than three levels apart', () => {
     const second: LevelBlueprint = { ...baseBlueprint(), id: 2 };
-    expect(() => buildLevels([baseBlueprint(), second], testBanks(['f1', 'f2', 'f3'], ['x1', 'x2', 'x3']), LEVEL_SEED)).toThrow(/spacing must be >= 3/);
+    const spacedBanks: Record<string, string[]> = {
+      fruit: ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'],
+      weather: ['x1', 'x2', 'x3', 'x4', 'x5', 'x6'],
+      colours: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'],
+      furniture: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6']
+    };
+    expect(() => buildLevels([baseBlueprint(), second], spacedBanks, LEVEL_SEED)).toThrow(/spacing must be >= 3/);
   });
 
   it('rejects unknown concepts', () => {
