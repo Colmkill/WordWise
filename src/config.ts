@@ -38,3 +38,6 @@ export const STARTING_LIVES = 3;
  */
 export const MIN_WORDS_PER_TOPIC = 3;
 export const MAX_WORDS_PER_TOPIC = 7;
+
+/** Deterministic seed for bank-based level word selection (see core/level-builder.ts). */
+export const LEVEL_SEED = 42;
