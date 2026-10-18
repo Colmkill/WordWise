@@ -596,3 +596,50 @@ body.reduced-motion .bubble.in-flight {
     height: 48px;
   }
 }
+
+/* --- Decorative background bubbles (aesthetic layer) -------------------------- */
+
+#bg-bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#screen {
+  position: relative;
+  z-index: 1;
+}
+
+.bg-bubble {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+  animation-name: bgDriftA;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.bg-bubble.drift-b {
+  animation-name: bgDriftB;
+}
+
+@keyframes bgDriftA {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(1.2rem, -1.8rem); }
+  50% { transform: translate(-0.6rem, -3.2rem); }
+  75% { transform: translate(-1.6rem, -1.2rem); }
+}
+
+@keyframes bgDriftB {
+  0%, 100% { transform: translate(0, 0); }
+  30% { transform: translate(-1.5rem, 2.2rem); }
+  60% { transform: translate(0.8rem, 3.5rem); }
+  85% { transform: translate(1.4rem, 1.4rem); }
+}
+
+body.reduced-motion #bg-bubbles .bg-bubble {
+  animation: none !important;
+}

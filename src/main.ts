@@ -54,6 +54,7 @@ function sync(): void {
 
 function buildShell() {
   app.innerHTML = `
+    <div id="bg-bubbles" aria-hidden="true"></div>
     <div id="screen"></div>
   `;
 }
@@ -445,12 +446,46 @@ function buildBoardAndWire() {
 }
 
 /**
+ * Decorative background: repopulates the floating-colour-bubble layer with a
+ * fresh random arrangement. Called once per genuinely new level (guarded by
+ * isFreshLevel), never on ordinary renders. Purely aesthetic: the layer is
+ * pointer-events:none and sits behind #screen, fully isolated from gameplay.
+ */
+function regenerateBackground() {
+  const layer = document.querySelector<HTMLElement>('#bg-bubbles');
+  if (!layer) return;
+  layer.innerHTML = '';
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const count = Math.max(12, Math.min(40, Math.round((w * h) / 22000)));
+  for (let i = 0; i < count; i++) {
+    const size = 12 + Math.random() * 78; // 12-90px
+    const hue = Math.floor(Math.random() * 360);
+    const light = 55 + Math.random() * 15;
+    const sat = 85 + Math.random() * 15;
+    const el = document.createElement('div');
+    el.className = 'bg-bubble ' + (Math.random() < 0.5 ? 'drift-a' : 'drift-b');
+    el.style.left = Math.random() * 100 + '%';
+    el.style.top = Math.random() * 100 + '%';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.background =
+      'radial-gradient(circle at 30% 25%, hsla(0,0%,100%,0.85) 0%, hsla(' + hue + ',' + sat + '%,' + light + '%,0.45) 45%, hsla(' + hue + ',' + sat + '%,' + (light - 12) + '%,0.35) 100%)';
+    el.style.animationDuration = (12 + Math.random() * 18) + 's';
+    el.style.animationDelay = -Math.random() * 30 + 's';
+    el.style.opacity = String(0.25 + Math.random() * 0.25);
+    layer.appendChild(el);
+  }
+}
+
+/**
  * Fresh-level turret launch: hide the bubbles, then fire each one from the
  * turret to its pre-assigned destination. Bubbles are not interactive until
  * every bubble has settled (board locked during the sequence).
  */
 function maybeLaunchSequence() {
   if (!isFreshLevel()) return;
+  regenerateBackground();
   board.setLocked(true);
   board.launchSequence(state, {
     sequenceTarget: LAUNCH_SEQUENCE_TARGET_MS,
