@@ -16,7 +16,6 @@
  */
 
 export const WORD_BANKS: Record<string, string[]> = {
-
   aerospace: ['rocket', 'satellite', 'spaceship', 'orbit', 'thruster', 'cockpit', 'fuselage', 'payload', 'spacecraft', 'turbine', 'airfoil', 'reentry'],
   airport: ['runway', 'terminal', 'hangar', 'baggage', 'boarding pass', 'departure', 'arrival', 'check-in', 'customs', 'concourse', 'taxiway', 'carousel'],
   alchemy: ['alembic', 'calcination', 'quintessence', 'crucible', 'elixir', 'tincture', 'vitriol', 'chrysopoeia'],
@@ -30,7 +29,6 @@ export const WORD_BANKS: Record<string, string[]> = {
   astronomy: ['nebula', 'galaxy', 'pulsar', 'quasar', 'eclipse', 'constellation', 'supernova', 'asteroid', 'comet', 'telescope', 'solstice', 'light-year'],
   athletics: ['sprint', 'hurdles', 'relay', 'marathon', 'javelin', 'discus', 'shot put', 'long jump', 'high jump', 'pole vault', 'decathlon', 'steeplechase'],
   autumn: ['harvest', 'foliage', 'acorn', 'conker', 'pumpkin', 'bonfire', 'equinox', 'chestnut', 'leaf litter', 'mushroom', 'migration', 'scarecrow'],
-  
   baking: ['flour', 'yeast', 'rolling pin', 'dough', 'whisk', 'pastry', 'preheat', 'sourdough', 'crumb'],
   body: ['elbow', 'ankle', 'thumb', 'wrist', 'shoulder', 'heel', 'knee', 'spine', 'palm', 'rib', 'hip', 'chin'],
   camping: ['tent', 'torch', 'marshmallow', 'campfire', 'canteen', 'compass', 'hammock', 'ranger', 'wilderness'],
