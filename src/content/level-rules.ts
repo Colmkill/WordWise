@@ -1,8 +1,17 @@
 /**
- * Procedural level-construction rules, banded by level number. No level is
- * authored by hand: the generator (core/level-builder.ts) composes each level
- * from these bands plus the concept word banks (content/word-banks.ts) and
- * the concept registry (content/concepts.ts: category + hint).
+ * Procedural level-construction rules, driven by a difficulty curve. No
+ * level is authored by hand: the generator (core/level-builder.ts) composes
+ * each level from these bands plus the concept word banks
+ * (content/word-banks.ts) and the concept registry (content/concepts.ts).
+ *
+ * The progression is defined by curveFor(levelId) rather than a hand-written
+ * band table, so the game can extend to any level count (LEVEL_COUNT) with
+ * small, incremental difficulty steps: six topics per level throughout, a
+ * familiarity window that widens gradually, a concept-difficulty ceiling
+ * that rises a notch every ten levels, and word-count range that opens up
+ * only late. Consecutive levels sharing identical curve parameters are
+ * merged into BANDS rows automatically; the final row is open-ended so
+ * bandFor keeps covering the last configured level.
  *
  * A band constrains: topic count, permitted concept difficulty, the
  * familiarity window (how deep into a bank the draw may reach) and the
@@ -24,20 +33,83 @@ export interface LevelBand {
   countRange: [number, number];
 }
 
-export const BANDS: LevelBand[] = [
-  { from: 1, to: 2, topics: 4, difficulty: [1, 2], window: [0, 3], countRange: [3, 3] },
-  { from: 3, to: 5, topics: 4, difficulty: [1, 3], window: [0, 3], countRange: [3, 3] },
-  { from: 6, to: 11, topics: 4, difficulty: [2, 4], window: [0, 3], countRange: [3, 3] },
-  { from: 12, to: Number.POSITIVE_INFINITY, topics: 4, difficulty: [4, 5], window: [0, 20], countRange: [3, 5] }
-];
+/** How many levels the game ships. Raise it to extend the progression. */
+export const LEVEL_COUNT = 100;
 
 /**
- * Mistake threshold per level number. The number of entries also defines how
- * many levels are generated; append entries to extend the game.
+ * The difficulty curve. Difficulty rises in small increments along four
+ * independent axes so no single jump is abrupt:
+ *  - topic count is constant (six) at every level;
+ *  - the familiarity window widens by one bank rank every 12 levels;
+ *  - the concept-difficulty ceiling rises a notch every 10 levels (the
+ *    floor follows more slowly, from level 21, so easy topics keep
+ *    appearing alongside harder ones);
+ *  - the word-count range stays [3, 3] until level 50, then widens one
+ *    step at a time up to the 3-7 content policy ceiling.
  */
-export const THRESHOLDS: Record<number, number> = {
-  1: 4, 2: 4, 3: 3, 4: 3, 5: 3, 6: 3, 7: 2, 8: 3, 9: 3, 10: 3, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2
-};
+export function curveFor(levelId: number): {
+  topics: number;
+  difficulty: [number, number];
+  window: [number, number];
+  countRange: [number, number];
+} {
+  return {
+    topics: 6,
+    difficulty: [
+      levelId <= 20 ? 1 : Math.min(3, 1 + Math.floor((levelId - 20) / 60)),
+      Math.min(5, 1 + Math.floor(levelId / 10))
+    ],
+    window: [0, Math.min(15, 3 + Math.floor(levelId / 12))],
+    countRange: [3, Math.min(7, 3 + Math.floor(levelId / 50))]
+  };
+}
+
+/** Mistake allowance: generous at the start, tightening in two steps. */
+function thresholdFor(levelId: number): number {
+  return levelId <= 2 ? 4 : levelId <= 13 ? 3 : 2;
+}
+
+/**
+ * Rule bands for the whole progression, computed from the curve. Levels
+ * with identical curve parameters share one band row; the last row is
+ * open-ended so bandFor covers every configured level.
+ */
+export const BANDS: LevelBand[] = (() => {
+  const bands: LevelBand[] = [];
+  let i = 1;
+  while (i <= LEVEL_COUNT) {
+    const c = curveFor(i);
+    let j = i;
+    while (j + 1 <= LEVEL_COUNT) {
+      const n = curveFor(j + 1);
+      if (
+        n.topics !== c.topics ||
+        n.difficulty[0] !== c.difficulty[0] ||
+        n.difficulty[1] !== c.difficulty[1] ||
+        n.window[0] !== c.window[0] ||
+        n.window[1] !== c.window[1] ||
+        n.countRange[0] !== c.countRange[0] ||
+        n.countRange[1] !== c.countRange[1]
+      ) {
+        break;
+      }
+      j++;
+    }
+    bands.push({ from: i, to: j, ...c });
+    i = j + 1;
+  }
+  bands[bands.length - 1].to = Number.POSITIVE_INFINITY;
+  return bands;
+})();
+
+/**
+ * Mistake threshold per level number, computed from thresholdFor. The
+ * number of entries also defines how many levels are generated; raise
+ * LEVEL_COUNT to extend the game.
+ */
+export const THRESHOLDS: Record<number, number> = Object.fromEntries(
+  Array.from({ length: LEVEL_COUNT }, (_, i) => [i + 1, thresholdFor(i + 1)])
+);
 
 /**
  * Editorial difficulty rating (1 = everyday, 5 = specialist) for every

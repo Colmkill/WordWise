@@ -61,6 +61,6 @@ describe('level generator', () => {
   });
 
   it('refuses to generate levels beyond the configured thresholds', () => {
-    expect(() => generateLevels(WORD_BANKS, LEVEL_SEED, 16)).toThrow(/no mistake threshold/);
+    expect(() => generateLevels(WORD_BANKS, LEVEL_SEED, 101)).toThrow(/no mistake threshold/);
   });
 });

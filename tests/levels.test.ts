@@ -274,8 +274,12 @@ describe('phase C content expansion', () => {
   });
 
   it('mixes group sizes within the later levels', () => {
-    const sizes = LEVELS[11].topics.map((t) => t.words.length);
-    expect(new Set(sizes).size).toBeGreaterThan(1);
+    // Word counts widen from level 50 onward; by then several levels must
+    // mix group sizes rather than using a uniform count.
+    const mixed = LEVELS.slice(49).filter(
+      (level) => new Set(level.topics.map((t) => t.words.length)).size > 1
+    );
+    expect(mixed.length).toBeGreaterThan(0);
   });
 
   it('never repeats a word across different topics of the same level (all levels)', () => {
