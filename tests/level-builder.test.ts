@@ -3,11 +3,12 @@ import { generateLevels, eligibleWords } from '../src/core/level-builder';
 import { LEVELS } from '../src/levels';
 import { WORD_BANKS } from '../src/content/word-banks';
 import { LEVEL_SEED } from '../src/config';
+import { LEVEL_COUNT } from '../src/content/level-rules';
 
 describe('level generator', () => {
   it('is deterministic: the same inputs rebuild identical levels', () => {
-    const a = generateLevels(WORD_BANKS, LEVEL_SEED);
-    const b = generateLevels(WORD_BANKS, LEVEL_SEED);
+    const a = generateLevels(WORD_BANKS, LEVEL_SEED, LEVEL_COUNT, { ambiguity: true });
+    const b = generateLevels(WORD_BANKS, LEVEL_SEED, LEVEL_COUNT, { ambiguity: true });
     expect(a).toEqual(b);
     expect(a).toEqual(LEVELS);
   });

@@ -33,11 +33,22 @@ describe('cross-topic index', () => {
     expect(conceptsForWord('shared', index)).toEqual(['a', 'b']);
   });
 
-  it('reports the known shipped overlaps', () => {
+  it('reports every shipped cross-topic word', () => {
+    // The twelve intentional cross-topic words of the shipped banks.
+    expect(CROSS_TOPIC_WORDS.size).toBe(12);
+    expect([...conceptsForWord('shower')].sort()).toEqual(['bathroom', 'weather']);
+    expect([...conceptsForWord('orange')].sort()).toEqual(['colours', 'fruit']);
+    expect([...conceptsForWord('wave')].sort()).toEqual(['beach', 'ocean']);
+    expect([...conceptsForWord('scale')].sort()).toEqual(['cartography', 'kitchen']);
+    expect([...conceptsForWord('stream')].sort()).toEqual(['internet', 'rivers']);
+    expect([...conceptsForWord('nail')].sort()).toEqual(['body', 'carpentry']);
+    expect([...conceptsForWord('court')].sort()).toEqual(['law', 'tennis']);
+    expect([...conceptsForWord('match')].sort()).toEqual(['fire', 'sports']);
+    expect([...conceptsForWord('mole')].sort()).toEqual(['chemistry', 'garden']);
+    expect([...conceptsForWord('bat')].sort()).toEqual(['animals', 'birds']);
     expect([...conceptsForWord('sprint')].sort()).toEqual(['athletics', 'cycling']);
     expect([...conceptsForWord('descent')].sort()).toEqual(['cycling', 'space']);
     expect(isAmbiguous('peloton')).toBe(false);
-    expect(CROSS_TOPIC_WORDS.size).toBe(2);
   });
 
   it('returns empty for an empty or disjoint bank map', () => {
@@ -47,16 +58,17 @@ describe('cross-topic index', () => {
 });
 
 describe('shipped level snapshot', () => {
-  // The cross-topic construct must not perturb generation. Any change to
-  // banks, bands, seed or draw order that alters shipped level content
-  // changes this hash and fails here. Regenerate the baseline only in the
-  // same change set that intentionally reshuffles content.
+  // The cross-topic construct must not perturb generation beyond what is
+  // intended. Any change to banks, bands, seed or draw order that alters
+  // shipped level content changes this hash and fails here. Regenerate
+  // the baseline only in the same change set that intentionally
+  // reshuffles content (as the cross-topic content batch did).
   it('is byte-identical to the frozen 100-level baseline (seed 42)', () => {
     const projection = LEVELS.map((level) => [
       level.id,
       level.mistakeThreshold,
       level.topics.map((t) => [t.concept, t.words])
     ]);
-    expect(hashString(JSON.stringify(projection))).toBe(4201405929);
+    expect(hashString(JSON.stringify(projection))).toBe(467887781);
   });
 });
