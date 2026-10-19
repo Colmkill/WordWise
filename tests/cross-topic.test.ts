@@ -1,0 +1,62 @@
+import { describe, it, expect } from 'vitest';
+import {
+  buildCrossTopicIndex,
+  CROSS_TOPIC_WORDS,
+  isAmbiguous,
+  conceptsForWord
+} from '../src/content/cross-topic';
+import { LEVELS } from '../src/levels';
+
+/** Deterministic string hash (FNV-1a), mirroring core/level-builder.ts. */
+function hashString(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+describe('cross-topic index', () => {
+  it('indexes only words banked by more than one concept', () => {
+    const index = buildCrossTopicIndex({ a: ['x', 'y'], b: ['x'], c: ['y', 'z'] });
+    expect(index.get('x')).toEqual(['a', 'b']);
+    expect(index.get('y')).toEqual(['a', 'c']);
+    expect(index.has('z')).toBe(false);
+    expect(index.size).toBe(2);
+  });
+
+  it('keys words case-insensitively and deduplicates listings', () => {
+    const index = buildCrossTopicIndex({ a: ['Shared'], b: ['shared', 'shared'] });
+    expect(index.get('shared')).toEqual(['a', 'b']);
+    expect(isAmbiguous('SHARED', index)).toBe(true);
+    expect(conceptsForWord('shared', index)).toEqual(['a', 'b']);
+  });
+
+  it('reports the known shipped overlaps', () => {
+    expect([...conceptsForWord('sprint')].sort()).toEqual(['athletics', 'cycling']);
+    expect([...conceptsForWord('descent')].sort()).toEqual(['cycling', 'space']);
+    expect(isAmbiguous('peloton')).toBe(false);
+    expect(CROSS_TOPIC_WORDS.size).toBe(2);
+  });
+
+  it('returns empty for an empty or disjoint bank map', () => {
+    expect(buildCrossTopicIndex({}).size).toBe(0);
+    expect(buildCrossTopicIndex({ a: ['x'], b: ['y'] }).size).toBe(0);
+  });
+});
+
+describe('shipped level snapshot', () => {
+  // The cross-topic construct must not perturb generation. Any change to
+  // banks, bands, seed or draw order that alters shipped level content
+  // changes this hash and fails here. Regenerate the baseline only in the
+  // same change set that intentionally reshuffles content.
+  it('is byte-identical to the frozen 100-level baseline (seed 42)', () => {
+    const projection = LEVELS.map((level) => [
+      level.id,
+      level.mistakeThreshold,
+      level.topics.map((t) => [t.concept, t.words])
+    ]);
+    expect(hashString(JSON.stringify(projection))).toBe(4201405929);
+  });
+});
