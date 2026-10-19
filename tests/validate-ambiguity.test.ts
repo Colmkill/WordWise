@@ -5,6 +5,7 @@ import {
   validateAllAmbiguity
 } from '../src/core/validate-ambiguity';
 import { buildCrossTopicIndex } from '../src/content/cross-topic';
+import { ambiguityFor } from '../src/content/level-rules';
 import { LEVELS } from '../src/levels';
 import type { Level, Topic } from '../src/types';
 
@@ -56,12 +57,11 @@ describe('validateAmbiguity', () => {
     expect(validateAmbiguity(l, 1, index)).toEqual([]);
   });
 
-  it('flags a claim exceeding the budget', () => {
+  it('flags a word drawn into two topics of one level', () => {
     const l = level(5, [
       topic('a', 'bathroom', ['shower', 'towel']),
       topic('b', 'weather', ['shower'])
     ]);
-    // 'shower' appears twice: exclusivity violation; nothing claimable remains.
     const issues = validateAmbiguity(l, 0, index);
     expect(issues.some((i) => i.message.includes('must be claimed by exactly one topic'))).toBe(true);
   });
@@ -114,5 +114,18 @@ describe('shipped levels', () => {
       const issues = validateAmbiguity(l, Number.POSITIVE_INFINITY);
       expect(issues).toEqual([]);
     }
+  });
+
+  // Grandfather clause: the shipped levels were generated before the
+  // ambiguity axis existed, so their incidental claims (levels 66, 70, 73
+  // and 86) predate any budget. They are allowed one claim each regardless
+  // of the ramp, so correctness never depends on where incidental claims
+  // happen to fall. Regenerate this baseline when content changes.
+  const GRANDFATHERED = new Set([66, 70, 73, 86]);
+
+  it('meets the ramped budget with the four grandfathered incidental claims', () => {
+    expect(() =>
+      validateAllAmbiguity(LEVELS, (id) => Math.max(ambiguityFor(id), GRANDFATHERED.has(id) ? 1 : 0))
+    ).not.toThrow();
   });
 });

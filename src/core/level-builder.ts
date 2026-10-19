@@ -1,6 +1,7 @@
 import type { Level, Topic } from '../types';
 import { TOPIC_CONCEPTS } from '../content/concepts';
 import { BANDS, CONCEPT_DIFFICULTY, THRESHOLDS, bandFor } from '../content/level-rules';
+import { buildCrossTopicIndex, type CrossTopicIndex } from '../content/cross-topic';
 
 /** Deterministic string hash (FNV-1a). */
 function hashString(s: string): number {
@@ -28,13 +29,30 @@ function mulberry32(seed: number): () => number {
  *  enough that an easy used concept beats a harder fresh one. */
 const REUSE_PENALTY = 2;
 
+/** Score bonus for a concept able to claim an unclaimed cross-topic word
+ *  while the level ambiguity budget has room. Only consulted when the
+ *  ambiguity axis is enabled; the dormant path never reads it. */
+const AMBIGUITY_BONUS = 1.5;
+
+/** Options for level generation. */
+export interface GenerateOptions {
+  /**
+   * Enable the cross-topic ambiguity axis: within each band ambiguity
+   * budget, concept selection biases toward concepts that could claim an
+   * ambiguous word. Defaults to false (dormant): the draw sequence and
+   * therefore every generated level is byte-identical to a generation
+   * without this option.
+   */
+  ambiguity?: boolean;
+}
+
 /** Words in a bank that may still be drawn for one topic instance:
- *  the band's familiarity window, relaxed toward the deeper end of the
- *  bank until enough words are available, minus words already drawn for this
- *  concept in earlier levels (reuse disjointness) and words already used by
- *  another topic in this level (a duplicate is skipped and the next
- *  eligible word substitutes). Returns fewer than minCount words only when
- *  the bank is exhausted; callers treat that as ineligibility. */
+ *  the band familiarity window, relaxed toward the deeper end of the
+ *  bank until enough words are available, minus words already drawn for
+ *  this concept in earlier levels (reuse disjointness) and words already
+ *  used by another topic in this level (a duplicate is skipped and the
+ *  next eligible word substitutes). Returns fewer than minCount words only
+ *  when the bank is exhausted; callers treat that as ineligibility. */
 export function eligibleWords(
   bank: string[],
   excluded: Set<string>,
@@ -73,6 +91,21 @@ function hintFor(concept: string): string {
   return hint;
 }
 
+/** Ambiguous words banked by each concept, for the ambiguity axis. Built
+ *  only when the axis is enabled; null keeps the dormant path untouched. */
+function ambiguousWordsByConcept(banks: Record<string, string[]>, index: CrossTopicIndex): Map<string, Set<string>> {
+  const byConcept = new Map<string, Set<string>>();
+  for (const [word, concepts] of index) {
+    for (const concept of concepts) {
+      if (!banks[concept]) continue;
+      const set = byConcept.get(concept) ?? new Set<string>();
+      set.add(word);
+      byConcept.set(concept, set);
+    }
+  }
+  return byConcept;
+}
+
 /**
  * Generate levels procedurally from the word banks and rule bands. There is
  * no per-level authoring: concepts, word counts and word lists are all
@@ -92,8 +125,13 @@ function hintFor(concept: string): string {
  *    invariant);
  * 3. pick the concept with the lowest score: lowest difficulty first, with
  *    a small penalty for already-used concepts, tie-broken by seeded
- *    randomness;
- * 4. choose a word count inside the band's range (seeded), capped by what
+ *    randomness. With options.ambiguity, a concept that could claim an
+ *    unclaimed cross-topic word (banked by another concept too, not yet
+ *    used in this level) scores slightly better while the band ambiguity
+ *    budget has room; the first topic to draw such a word claims it and
+ *    the sibling concept substitutes other words - a cross-topic word is
+ *    never displayed by two topics of one level;
+ * 4. choose a word count inside the band range (seeded), capped by what
  *    the bank can still supply;
  * 5. draw the words from the most familiar eligible ranks.
  * Infeasible requests throw with the level, concept and counts involved.
@@ -101,7 +139,8 @@ function hintFor(concept: string): string {
 export function generateLevels(
   banks: Record<string, string[]>,
   seed: number,
-  levelCount: number = Object.keys(THRESHOLDS).length
+  levelCount: number = Object.keys(THRESHOLDS).length,
+  options: GenerateOptions = {}
 ): Level[] {
   for (const concept of Object.keys(banks)) {
     if (!TOPIC_CONCEPTS[concept]) {
@@ -111,6 +150,10 @@ export function generateLevels(
       throw new Error(`Concept "${concept}" has no difficulty rating (see CONCEPT_DIFFICULTY in level-rules.ts)`);
     }
   }
+
+  const useAmbiguity = options.ambiguity === true;
+  const crossIndex = useAmbiguity ? buildCrossTopicIndex(banks) : null;
+  const ambiguousByConcept = crossIndex ? ambiguousWordsByConcept(banks, crossIndex) : null;
 
   const usedByConcept = new Map<string, Set<string>>();
   const lastLevelOf = new Map<string, number>();
@@ -125,7 +168,9 @@ export function generateLevels(
       throw new Error(`Level ${levelId}: no mistake threshold configured (see THRESHOLDS in level-rules.ts)`);
     }
     const isFinalBand = BANDS.indexOf(band) === lastBandIndex;
+    const ambiguityBudget = useAmbiguity ? band.ambiguity ?? 0 : 0;
     const usedInLevel = new Set<string>();
+    const claimedAmbiguous = new Set<string>();
     const topics: Topic[] = [];
 
     for (let slot = 0; slot < band.topics; slot++) {
@@ -161,8 +206,20 @@ export function generateLevels(
       const pickRand = mulberry32(hashString(`${seed}:${levelId}:pick:${slot}`));
       let chosen = pickFrom[0];
       let bestScore = Infinity;
+      const budgetRoom = ambiguityBudget > 0 && claimedAmbiguous.size < ambiguityBudget;
       for (const concept of pickFrom) {
-        const score = (usedByConcept.has(concept) ? REUSE_PENALTY : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
+        let score = (usedByConcept.has(concept) ? REUSE_PENALTY : 0) + CONCEPT_DIFFICULTY[concept] + pickRand() * 1.5;
+        if (budgetRoom && ambiguousByConcept) {
+          const ambiguous = ambiguousByConcept.get(concept);
+          if (ambiguous) {
+            for (const word of ambiguous) {
+              if (!claimedAmbiguous.has(word) && !usedInLevel.has(word)) {
+                score -= AMBIGUITY_BONUS;
+                break;
+              }
+            }
+          }
+        }
         if (score < bestScore) {
           bestScore = score;
           chosen = concept;
@@ -191,6 +248,9 @@ export function generateLevels(
       for (const w of words) {
         excluded.add(w);
         usedInLevel.add(w);
+        if (crossIndex && crossIndex.has(w.trim().toLowerCase())) {
+          claimedAmbiguous.add(w.trim().toLowerCase());
+        }
       }
       usedByConcept.set(chosen, excluded);
       lastLevelOf.set(chosen, levelId);

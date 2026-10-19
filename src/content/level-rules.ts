@@ -8,16 +8,18 @@
  * band table, so the game can extend to any level count (LEVEL_COUNT) with
  * small, incremental difficulty steps: six topics per level throughout, a
  * familiarity window that widens gradually, a concept-difficulty ceiling
- * that rises a notch every ten levels, and word-count range that opens up
+ * that rises a notch every ten levels, and a word-count range that opens up
  * only late. Consecutive levels sharing identical curve parameters are
  * merged into BANDS rows automatically; the final row is open-ended so
  * bandFor keeps covering the last configured level.
  *
  * A band constrains: topic count, permitted concept difficulty, the
- * familiarity window (how deep into a bank the draw may reach) and the
- * per-topic word-count range. Concept difficulty, difficulty banding and
- * the reserve rule (hard concepts stay available for the final band) are
- * what relegate obscure topics to later levels.
+ * familiarity window (how deep into a bank the draw may reach), the
+ * per-topic word-count range and the cross-topic ambiguity budget (how many
+ * words banked by several concepts - see content/cross-topic.ts - a level
+ * may claim). Concept difficulty, difficulty banding and the reserve rule
+ * (hard concepts stay available for the final band) are what relegate
+ * obscure topics to later levels.
  */
 export interface LevelBand {
   /** Inclusive level-number range this band covers. */
@@ -31,13 +33,18 @@ export interface LevelBand {
   window: [number, number];
   /** Per-topic word-count range [min, max]. */
   countRange: [number, number];
+  /**
+   * Per-level budget of cross-topic word claims. Zero means no deliberate
+   * ambiguity; the generator only seeks ambiguous words above zero.
+   */
+  ambiguity?: number;
 }
 
 /** How many levels the game ships. Raise it to extend the progression. */
 export const LEVEL_COUNT = 100;
 
 /**
- * The difficulty curve. Difficulty rises in small increments along four
+ * The difficulty curve. Difficulty rises in small increments along five
  * independent axes so no single jump is abrupt:
  *  - topic count is constant (six) at every level;
  *  - the familiarity window widens by one bank rank every 12 levels;
@@ -45,13 +52,17 @@ export const LEVEL_COUNT = 100;
  *    floor follows more slowly, from level 21, so easy topics keep
  *    appearing alongside harder ones);
  *  - the word-count range stays [3, 3] until level 50, then widens one
- *    step at a time up to the 3-7 content policy ceiling.
+ *    step at a time up to the 3-7 content policy ceiling;
+ *  - the cross-topic ambiguity budget rises from level 40, one extra
+ *    claimed word every 15 levels, capped at 3 (a scarcity guard: the
+ *    supply of intentionally ambiguous words is content-driven).
  */
 export function curveFor(levelId: number): {
   topics: number;
   difficulty: [number, number];
   window: [number, number];
   countRange: [number, number];
+  ambiguity: number;
 } {
   return {
     topics: 6,
@@ -60,7 +71,8 @@ export function curveFor(levelId: number): {
       Math.min(5, 1 + Math.floor(levelId / 10))
     ],
     window: [0, Math.min(15, 3 + Math.floor(levelId / 12))],
-    countRange: [3, Math.min(7, 3 + Math.floor(levelId / 50))]
+    countRange: [3, Math.min(7, 3 + Math.floor(levelId / 50))],
+    ambiguity: Math.min(3, Math.floor(Math.max(0, levelId - 40) / 15))
   };
 }
 
@@ -89,7 +101,8 @@ export const BANDS: LevelBand[] = (() => {
         n.window[0] !== c.window[0] ||
         n.window[1] !== c.window[1] ||
         n.countRange[0] !== c.countRange[0] ||
-        n.countRange[1] !== c.countRange[1]
+        n.countRange[1] !== c.countRange[1] ||
+        n.ambiguity !== c.ambiguity
       ) {
         break;
       }
@@ -110,6 +123,11 @@ export const BANDS: LevelBand[] = (() => {
 export const THRESHOLDS: Record<number, number> = Object.fromEntries(
   Array.from({ length: LEVEL_COUNT }, (_, i) => [i + 1, thresholdFor(i + 1)])
 );
+
+/** The cross-topic ambiguity budget of a given level number. */
+export function ambiguityFor(levelId: number): number {
+  return bandFor(levelId)?.ambiguity ?? 0;
+}
 
 /**
  * Editorial difficulty rating (1 = everyday, 5 = specialist) for every
