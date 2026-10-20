@@ -571,7 +571,7 @@ function regenerateBackground() {
   layer.innerHTML = '';
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const count = Math.max(120, Math.min(1236, Math.round((w * h) / 7300)));
+  const count = Math.max(1236, Math.min(1236, Math.round((w * h) / 7300)));
   for (let i = 0; i < count; i++) {
     const size = 50 + Math.random() * 78; // 50-90px
     const hue = Math.floor(Math.random() * 360);
