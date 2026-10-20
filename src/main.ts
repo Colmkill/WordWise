@@ -224,21 +224,57 @@ function showHowToPlay() {
   screen().querySelector('#ht-back')!.addEventListener('click', showMainMenu);
 }
 
-function showLevelSelect() {
+/** Levels shown per Level Select page: keeps the grid small so progress
+ *  reads at a glance instead of drowning in 100 buttons. */
+const LEVELS_PER_PAGE = 12;
+
+/** Current Level Select page (0-based). -1 means "the page containing the
+ *  frontier level", resolved on first render. */
+let levelSelectPage = -1;
+
+/**
+ * Level Select: one page of levels at a time (12 per page) with a short
+ * fade between pages, so completed progress stays legible instead of
+ * being buried under dozens of locked buttons. The first shown page is
+ * the one containing the frontier (highest unlocked) level.
+ */
+function showLevelSelect(page?: number) {
   const highest = Math.min(checkpoint?.highestUnlocked ?? 1, LEVELS.length);
+  const pageCount = Math.ceil(LEVELS.length / LEVELS_PER_PAGE);
+  if (page !== undefined) levelSelectPage = page;
+  if (levelSelectPage < 0) {
+    // Frontier level's page: level 12 sits on page 0 (levels 1-12).
+    levelSelectPage = Math.floor((highest - 1) / LEVELS_PER_PAGE);
+  }
+  levelSelectPage = Math.max(0, Math.min(pageCount - 1, levelSelectPage));
+  const first = levelSelectPage * LEVELS_PER_PAGE + 1;
+  const last = Math.min(first + LEVELS_PER_PAGE - 1, LEVELS.length);
+  const visible = LEVELS.filter((l) => l.id >= first && l.id <= last);
+
   screen().innerHTML = `
     <div class="menu-screen">
       <h2>Level Select</h2>
       <div class="level-grid">
-        ${LEVELS.map(
+        ${visible.map(
           (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
             ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? '✓ ' : '') : '🔒'}
           </button>`
         ).join('')}
       </div>
+      <div class="menu-buttons level-pager">
+        <button class="btn" id="ls-prev" ${levelSelectPage === 0 ? 'disabled' : ''}>← Previous</button>
+        <span class="level-pager-info">Levels ${first}–${last} of ${LEVELS.length}</span>
+        <button class="btn" id="ls-next" ${levelSelectPage >= pageCount - 1 ? 'disabled' : ''}>Next →</button>
+      </div>
       <div class="menu-buttons"><button class="btn" id="ls-back">Back</button></div>
     </div>
   `;
+  wireLevelSelect(levelSelectPage, pageCount);
+}
+
+/** Wire the level buttons, pager buttons and back button of the current
+ *  Level Select render. Page changes fade the grid out and back in. */
+function wireLevelSelect(current: number, pageCount: number) {
   screen().querySelectorAll<HTMLButtonElement>('.level-btn:not(.locked)').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
@@ -248,6 +284,25 @@ function showLevelSelect() {
       showGameScreen();
     });
   });
+  const gotoPage = (next: number) => {
+    if (next < 0 || next >= pageCount || next === current) return;
+    const grid = screen().querySelector<HTMLElement>('.level-grid');
+    if (!grid) return;
+    if (settings.reducedMotion) {
+      showLevelSelect(next);
+      return;
+    }
+    grid.classList.add('fading');
+    setTimeout(() => {
+      // Re-render only when the screen still shows Level Select (the
+      // player may have started a level mid-fade).
+      if (screen().querySelector('.level-grid')) showLevelSelect(next);
+    }, 250);
+  };
+  const prev = screen().querySelector<HTMLButtonElement>('#ls-prev');
+  const next = screen().querySelector<HTMLButtonElement>('#ls-next');
+  if (prev) prev.addEventListener('click', () => gotoPage(current - 1));
+  if (next) next.addEventListener('click', () => gotoPage(current + 1));
   screen().querySelector('#ls-back')!.addEventListener('click', showMainMenu);
 }
 

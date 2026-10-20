@@ -352,6 +352,30 @@ body.reduced-motion #app {
   grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
   gap: 0.6rem;
   width: min(28rem, 90vw);
+  transition: opacity 0.25s ease;
+}
+
+/* Fading between Level Select pages (reduced motion renders instantly). */
+.level-grid.fading {
+  opacity: 0;
+}
+
+.level-pager {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.level-pager .btn {
+  width: auto;
+}
+
+.level-pager-info {
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .level-btn {
