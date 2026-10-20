@@ -14,12 +14,34 @@ body {
   overflow: hidden;
 }
 
+/* Animated colour-harmony background (purple export), applied behind the
+   menu and play screens. Implemented with the background-position technique:
+   the gradient is painted once at 300% size and the animation slides it,
+   which the compositor handles cheaply (no per-frame gradient repaints). */
 #app {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: linear-gradient(180deg, #eaf6ff 0%, #fdf3ff 100%);
+  background: linear-gradient(135deg, #b558c0 0%, #7b6cac 50%, #7b4bcd 100%);
+  background-size: 300% 300%;
+  animation: colour-harmony 9.1s ease-in-out infinite;
   color: #1a3c5e;
+}
+
+@keyframes colour-harmony {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+body.reduced-motion #app {
+  animation: none !important;
 }
 
 #screen {
