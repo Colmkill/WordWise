@@ -645,7 +645,23 @@ function checkLevelComplete() {
       }
     }
     if (replay) {
-      // Replay: celebrate then return to Level Select.
+      // Replay: celebrate then return to Level Select. Completing a level
+      // here still counts as progress: the level is marked completed (and
+      // the next one unlocks when the frontier level was beaten), so the
+      // Level Select grid shows the check on return. Main-run lives are
+      // never touched by a replay.
+      const prev = checkpoint;
+      const cp = {
+        completedLevels: Array.from(new Set([...(prev?.completedLevels ?? []), state.levelId])),
+        highestUnlocked: Math.min(LEVELS.length, Math.max(prev?.highestUnlocked ?? 1, state.levelId + 1)),
+        lives: prev?.lives ?? STARTING_LIVES,
+        tutorialDone: prev?.tutorialDone ?? true
+      };
+      if (saveCheckpoint(cp)) {
+        checkpoint = loadCheckpoint();
+      } else {
+        warnStorage();
+      }
       celebrate(`Level ${state.levelId} Complete! 🎉`);
       setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
       return;
