@@ -389,7 +389,11 @@ export interface InstanceOutcome {
  * the same difficulty rules (owned by the level number), but a fresh
  * combination of topics wherever eligible content allows.
  *
- * Variation strategy, strictest first, each tier bounded:
+ * Variation strategy, strictest first, each tier bounded. In every tier a
+ * candidate may not repeat concepts from the caller's previous selection
+ * (the last played instance, or - on a level's first start this session -
+ * the shipped ladder's topics), except in the final tier where at most a
+ * third of the topics may repeat:
  *  - spacing 3: no concept from the previous two instances (a restart or
  *    replay of the same level therefore shows a completely different
  *    topic combination when the band's pool allows it);
@@ -452,13 +456,17 @@ export function nextLevelInstance(
       if (validateConcepts(level, TOPIC_CONCEPTS).length > 0) continue;
       if (validateAmbiguity(level, budget, ambiguityIndex).length > 0) continue;
 
+      // Variation gate at every tier: spacing 3/2 demand zero overlap with
+      // the previous selection (for restarts the history spacing already
+      // guarantees this, so the gate is a no-op there; for a first encounter
+      // with a fresh history it is what moves the instance away from the
+      // shipped selection). Spacing 1 is the graceful-degradation tier and
+      // accepts at most a third of the topics repeating.
       const overlap = level.topics.filter((t) => prev.has(t.concept)).length;
-      if (spacing === 1) {
-        const cap = Math.max(0, Math.floor(level.topics.length / 3));
-        if (overlap > cap) {
-          if (!best || overlap < best.overlap) best = { level, history: attemptHistory, overlap };
-          continue;
-        }
+      const cap = spacing === 1 ? Math.max(0, Math.floor(level.topics.length / 3)) : 0;
+      if (overlap > cap) {
+        if (!best || overlap < best.overlap) best = { level, history: attemptHistory, overlap };
+        continue;
       }
       return { level, fallback: false, attempts, history: attemptHistory };
     }
