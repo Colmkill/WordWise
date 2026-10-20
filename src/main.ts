@@ -573,7 +573,11 @@ function regenerateBackground() {
   const h = window.innerHeight;
   const count = Math.max(600, Math.min(600, Math.round((w * h) / 7300)));
   for (let i = 0; i < count; i++) {
-    const size = 50 + Math.random() * 78; // 50-90px
+    // Bubble size scales with the viewport (shortest edge against a 720px
+  // reference) so large screens keep the same visual density as phones;
+  // phones stay at the 50-90px base, desktops grow up to 2.2x.
+  const scale = Math.max(1, Math.min(2.2, Math.min(w, h) / 720));
+  const size = (50 + Math.random() * 78) * scale;
     const hue = Math.floor(Math.random() * 360);
     const light = 48 + Math.random() * 10; // 48-58: vivid, not pastel
     const sat = 95 + Math.random() * 5; // near-full saturation
@@ -835,6 +839,14 @@ function showRunComplete() {
 }
 
 // --- Boot --------------------------------------------------------------------
+
+// Keep the decorative background sized for the viewport across resizes
+// (debounced; purely aesthetic layer, safe at any time).
+let bgResizeTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(bgResizeTimer);
+  bgResizeTimer = window.setTimeout(regenerateBackground, 250);
+});
 
 sync();
 buildShell();
