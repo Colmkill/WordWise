@@ -33,7 +33,13 @@ export function isReplayContext(replay: boolean): boolean {
   return replay;
 }
 
-export function startReplay(levelId: number): GameState {
-  const level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0];
-  return startLevel(level, 3); // replays never touch main-run lives
+/**
+ * Start a Level Select replay from an already-built level instance. The
+ * caller (main.ts) decides which instance to hand over: the shipped level
+ * on a first play this session, or a freshly generated variant when the
+ * level was already played (see newInstanceFor in main.ts). Replays never
+ * touch main-run lives.
+ */
+export function startReplay(level: Level): GameState {
+  return startLevel(level, 3);
 }

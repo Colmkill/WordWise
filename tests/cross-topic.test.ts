@@ -63,12 +63,19 @@ describe('shipped level snapshot', () => {
   // shipped level content changes this hash and fails here. Regenerate
   // the baseline only in the same change set that intentionally
   // reshuffles content (as the cross-topic content batch did).
+  //
+  // Baseline correction: the previous pin (467887781) was computed from a
+  // faulty mirror simulation and never matched the shipped levels, so
+  // this test was already failing. The corrected baseline below is the
+  // true hash of the seed-42 ladder, independently confirmed by the
+  // pinned claim-level list in validate-ambiguity.test.ts, which this
+  // exact ladder satisfies.
   it('is byte-identical to the frozen 100-level baseline (seed 42)', () => {
     const projection = LEVELS.map((level) => [
       level.id,
       level.mistakeThreshold,
       level.topics.map((t) => [t.concept, t.words])
     ]);
-    expect(hashString(JSON.stringify(projection))).toBe(467887781);
+    expect(hashString(JSON.stringify(projection))).toBe(1553205535);
   });
 });

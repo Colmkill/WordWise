@@ -62,8 +62,19 @@ function topicOf(level: Level, topicId: string) {
 /**
  * Assess an attempt to group two bubbles. Validation uses the original topic
  * membership only; the expected word count never establishes correctness.
+ *
+ * The optional restartLevel callback builds the replacement level for a
+ * life-loss restart (the app layer hands in a freshly generated instance
+ * so a restart shows fresh topics and words; see main.ts). Without the
+ * callback the level restarts with the same definition, as before.
  */
-export function attemptGrouping(state: GameState, level: Level, a: number, b: number): AttemptOutcome {
+export function attemptGrouping(
+  state: GameState,
+  level: Level,
+  a: number,
+  b: number,
+  restartLevel?: (lives: number) => Level
+): AttemptOutcome {
   if (state.status !== 'playing') return { kind: 'invalid', state };
   if (a === b) return { kind: 'invalid', state };
 
@@ -75,7 +86,7 @@ export function attemptGrouping(state: GameState, level: Level, a: number, b: nu
   const correct = bubbleA.topicId === bubbleB.topicId;
 
   if (!correct) {
-    return { kind: 'incorrect', state: registerMistake(state, level) };
+    return { kind: 'incorrect', state: registerMistake(state, level, restartLevel) };
   }
 
   // Merge, preserving original word identities and topic membership.
@@ -117,8 +128,12 @@ export function dropWithoutTarget(state: GameState): GameState {
   return state;
 }
 
-/** Register a mistake; on reaching the threshold, lose a life and reset the level. */
-function registerMistake(state: GameState, level: Level): GameState {
+/**
+ * Register a mistake; on reaching the threshold, lose a life and restart the
+ * level fresh - with the replacement instance supplied by the caller's
+ * restartLevel callback when the app wants a fresh topic selection.
+ */
+function registerMistake(state: GameState, level: Level, restartLevel?: (lives: number) => Level): GameState {
   const mistakes = state.mistakes + 1;
   if (mistakes < state.mistakeThreshold) {
     return { ...state, mistakes };
@@ -128,8 +143,8 @@ function registerMistake(state: GameState, level: Level): GameState {
   if (lives <= 0) {
     return { ...state, mistakes, lives: 0, status: 'gameOver' };
   }
-  const fresh = startLevel(level, lives);
-  return fresh;
+  const freshLevel = restartLevel ? restartLevel(lives) : level;
+  return startLevel(freshLevel, lives);
 }
 
 /** Enter hint-selection mode: returns the selected bubble's topic hint eligibility. */

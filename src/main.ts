@@ -1,10 +1,12 @@
 import './style.css';
 import { LEVELS } from './levels';
+import { WORD_BANKS } from './content/word-banks';
 import { TOPIC_CONCEPTS } from './content/concepts';
 import { validateLevels, validateAllConcepts } from './core/validate';
 import type { Level } from './types';
-import { startLevel, attemptGrouping, advanceLevel, requestHint } from './core/game-state';
+import { startLevel, attemptGrouping, requestHint } from './core/game-state';
 import type { GameState } from './core/game-state';
+import { nextLevelInstance, type LevelInstanceHistory } from './core/level-builder';
 import { Board, type AttemptResult } from './ui/board';
 import { loadSettings, saveSettings } from './ui/menus';
 import { showModal, type Settings } from './ui/menus';
@@ -15,6 +17,7 @@ import {
   CATEGORY_REVEAL_MS,
   LEVEL_COMPLETE_PAUSE_MS,
   STARTING_LIVES,
+  LEVEL_SEED,
   LAUNCH_SEQUENCE_TARGET_MS,
   LAUNCH_TRAVEL_MS,
   LAUNCH_OVERLAP,
@@ -36,15 +39,105 @@ let storageWarned = false;
 
 /** True when the current game is a Level Select replay. */
 let replay = false;
-let levelIndex = 0;
 let state: GameState = startLevel(LEVELS[0]);
 let advancing = false;
 let hintSelecting = false;
 let revealing = new Set<number>();
 let paused = false;
 
-const currentLevel = (): Level => LEVELS[levelIndex];
+// --- Level instances (topic variation) ---------------------------------------
+//
+// The shipped ladder (LEVELS) is the curated first playthrough: every level
+// played for the first time in a session shows its shipped topics and words.
+// Restarting, replaying or returning to an already-played level generates a
+// fresh, fully validated instance of the same level number (the difficulty
+// rules belong to the level number; only the content selection varies; see
+// core/level-builder.ts nextLevelInstance).
+//
+// instanceHistory carries word-disjointness and concept spacing across every
+// instance of the session; instanceSeq is the session-wide spacing counter;
+// instanceNonce varies the deterministic draw per instance.
 
+/** The level currently on screen (shipped or generated instance). */
+let currentLevelInstance: Level = LEVELS[0];
+let instanceHistory: LevelInstanceHistory = { usedByConcept: new Map(), lastLevelOf: new Map() };
+let instanceSeq = 0;
+let instanceNonce = 1;
+/** Concepts of the most recent instance, for the variation overlap check. */
+let lastInstanceConcepts: string[] = [];
+/** Level numbers already started this session (first start = shipped level). */
+const startedLevels = new Set<number>();
+/**
+ * Increments whenever a new level instance replaces the one on screen.
+ * Delayed callbacks capture the value and cancel themselves when it moved
+ * on, so a restart can never render or advance a stale instance.
+ */
+let generation = 0;
+
+const currentLevel = (): Level => currentLevelInstance;
+
+/** Invalidate in-flight animation/selection state from the old instance. */
+function bumpGeneration(): void {
+  generation++;
+  revealing.clear();
+}
+
+/** Record a played level instance in the session history. */
+function recordInstance(level: Level): void {
+  instanceSeq++;
+  for (const topic of level.topics) {
+    const used = instanceHistory.usedByConcept.get(topic.concept) ?? new Set<string>();
+    for (const word of topic.words) used.add(word);
+    instanceHistory.usedByConcept.set(topic.concept, used);
+    instanceHistory.lastLevelOf.set(topic.concept, instanceSeq);
+  }
+  lastInstanceConcepts = level.topics.map((t) => t.concept);
+}
+
+/**
+ * The level instance to hand to an entry point (restart, replay, new run,
+ * advance). First start of a level this session returns the shipped level;
+ * later entries generate a fresh validated variant of the same level
+ * number. Falls back to the shipped level when the eligible pools are
+ * exhausted, so play never blocks. Also installs the instance as the
+ * current level, invalidates stale callbacks, and returns it.
+ */
+function newInstanceFor(levelId: number): Level {
+  const shipped = LEVELS[levelId - 1];
+  let level: Level;
+  if (!startedLevels.has(levelId)) {
+    level = shipped;
+    recordInstance(shipped);
+  } else {
+    const outcome = nextLevelInstance(
+      WORD_BANKS,
+      LEVEL_SEED,
+      levelId,
+      instanceNonce,
+      instanceSeq + 1,
+      instanceHistory,
+      lastInstanceConcepts,
+      { ambiguity: true },
+      shipped
+    );
+    if (outcome.fallback) {
+      // Pools exhausted: replay the shipped level (always valid) and record
+      // it so its words count toward disjointness on the next attempt.
+      level = shipped;
+      recordInstance(shipped);
+    } else {
+      level = outcome.level;
+      instanceHistory = outcome.history;
+      instanceSeq++;
+      instanceNonce++;
+      lastInstanceConcepts = level.topics.map((t) => t.concept);
+    }
+  }
+  startedLevels.add(levelId);
+  currentLevelInstance = level;
+  bumpGeneration();
+  return level;
+}
 
 function sync(): void {
   audio.setEnabled(settings.sound);
@@ -148,9 +241,9 @@ function showLevelSelect() {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
       replay = true;
-      levelIndex = LEVELS.findIndex((l) => l.id === id);
-      state = startReplay(id);
-          showGameScreen();
+      const instance = newInstanceFor(id);
+      state = startReplay(instance);
+      showGameScreen();
     });
   });
   screen().querySelector('#ls-back')!.addEventListener('click', showMainMenu);
@@ -275,8 +368,8 @@ function startTutorialIfNeeded(onDone: () => void) {
 
 function startGame(idx: number, lives: number) {
   replay = false;
-  levelIndex = idx;
-  state = startLevel(LEVELS[idx], lives);
+  const instance = newInstanceFor(LEVELS[idx].id);
+  state = startLevel(instance, lives);
   showGameScreen();
 }
 
@@ -365,7 +458,8 @@ function buildBoardAndWire() {
   });
 
   board.onAttempt = async (a: number, b: number): Promise<AttemptResult> => {
-    const outcome = attemptGrouping(state, currentLevel(), a, b);
+    const gen = generation;
+    const outcome = attemptGrouping(state, currentLevel(), a, b, (lives) => restartAfterLifeLoss(lives));
     const prevState = state;
     state = outcome.state;
 
@@ -388,15 +482,20 @@ function buildBoardAndWire() {
           board.retireBubble(b, 500);
           board.revealCategory(merged.id, topic.category, CATEGORY_REVEAL_MS).finally(() => {
             revealing.delete(merged.id);
+            if (gen !== generation) return;
             render();
             checkLevelComplete();
           });
         }
       } else {
-        setTimeout(render, 0);
+        setTimeout(() => {
+          if (gen === generation) render();
+        }, 0);
       }
       if (state.status === 'gameOver') {
-        setTimeout(showGameOver, 700);
+        setTimeout(() => {
+          if (gen === generation) showGameOver();
+        }, 700);
       }
       audio.play('correct');
       return 'correct';
@@ -404,8 +503,13 @@ function buildBoardAndWire() {
 
     if (outcome.kind === 'incorrect') {
       if (state.status === 'gameOver') {
-        setTimeout(showGameOver, 700);
+        setTimeout(() => {
+          if (gen === generation) showGameOver();
+        }, 700);
       } else {
+        // Deliberately unguarded: a life-loss restart replaced the level
+        // instance inside attemptGrouping, and this render must show the
+        // fresh arrangement (the generation guard was bumped, not stuck).
         setTimeout(render, 0);
       }
       audio.play('incorrect');
@@ -443,6 +547,12 @@ function buildBoardAndWire() {
   });
 
   menuBtn().addEventListener('click', openGameMenu);
+}
+
+/** Build the fresh instance for a life-loss restart (fresh topics and words). */
+function restartAfterLifeLoss(lives: number): Level {
+  void lives; // lives are applied by the caller (registerMistake)
+  return newInstanceFor(currentLevelInstance.id);
 }
 
 /**
@@ -513,8 +623,10 @@ function isFreshLevel(): boolean {
 function checkLevelComplete() {
   if (state.status !== 'levelComplete' || advancing) return;
   advancing = true;
+  const gen = generation;
   setTimeout(() => {
     advancing = false;
+    if (gen !== generation) return;
     // Save the completed-level checkpoint (main run only).
     if (!replay) {
       const cp = checkpointFrom(state, LEVELS.length);
@@ -530,16 +642,16 @@ function checkLevelComplete() {
       setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
-    const next = advanceLevel(state, LEVELS);
-    if (next.status === 'runComplete') {
+    const nextId = state.levelId + 1;
+    if (nextId > LEVELS.length) {
       showRunComplete();
       return;
     }
     board.invalidatePending();
-    state = next;
-    levelIndex = LEVELS.findIndex((l) => l.id === state.levelId);
+    const instance = newInstanceFor(nextId);
+    state = startLevel(instance, state.lives);
     board.resetLayout();
-    celebrate(`Level ${state.levelId - 1} Complete! 🎉`);
+    celebrate(`Level ${state.levelId} Complete! 🎉`);
     render();
     maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
@@ -600,12 +712,13 @@ function menuView(overlay: HTMLElement) {
     showConfirmInOverlay(
       overlay,
       'Restart Level?',
-      'Current-level progress will be lost. The level restarts with a fresh arrangement.',
+      'Current-level progress will be lost. The level restarts with a fresh selection of topics and words.',
       'Restart',
       () => {
         overlay.remove();
         board.invalidatePending();
-        state = replay ? startReplay(currentLevel().id) : startLevel(currentLevel(), state.lives);
+        const instance = newInstanceFor(currentLevel().id);
+        state = replay ? startReplay(instance) : startLevel(instance, state.lives);
         board.resetLayout();
         render();
         maybeLaunchSequence();
@@ -617,7 +730,7 @@ function menuView(overlay: HTMLElement) {
     showConfirmInOverlay(
       overlay,
       'Return to Menu?',
-      'Unfinished level progress will be lost. The level will restart with a fresh arrangement if played again.',
+      'Unfinished level progress will be lost. The level will restart with a fresh selection if played again.',
       'Return to Menu',
       () => {
         overlay.remove();
@@ -722,4 +835,3 @@ function showRunComplete() {
 sync();
 buildShell();
 showMainMenu();
-
