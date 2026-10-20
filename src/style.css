@@ -468,11 +468,39 @@ body.reduced-motion .board.hint-mode .bubble:hover {
 }
 
 .life.lost {
-  color: rgba(26, 60, 94, 0.22);
+  color: rgba(26, 60, 94, 0.25);
 }
 
 .life.just-lost {
   animation: lifeLost 0.6s ease-out;
+}
+
+/* Last remaining life: gentle heartbeat pulse (double thump). */
+.life.last-life {
+  animation: heartbeat 1.3s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    scale: 1;
+  }
+  14% {
+    scale: 1.18;
+  }
+  28% {
+    scale: 1;
+  }
+  42% {
+    scale: 1.1;
+  }
+  56% {
+    scale: 1;
+  }
+}
+
+body.reduced-motion .life.last-life {
+  animation: none !important;
 }
 
 @keyframes lifeLost {

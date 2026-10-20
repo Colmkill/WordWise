@@ -405,17 +405,18 @@ let board: Board;
 /** Previously rendered lives, so a life loss can animate the emptied heart. */
 let lastLives = STARTING_LIVES;
 
-/** Hearts HUD: red hearts for remaining lives, faint ones for lost lives. */
+/** Hearts HUD: red hearts for remaining lives, hollow heart slots for
+ *  lost lives; the last remaining heart pulses with a gentle heartbeat. */
 function renderLives(lives: number) {
   const el = hudLives();
   const lost = Math.max(0, STARTING_LIVES - lives);
   const animateLost = lives < lastLives;
   el.setAttribute('aria-label', `Lives: ${lives} of ${STARTING_LIVES}`);
   let html = '';
-  for (let i = 0; i < lives; i++) html += '<span class="life">' + "â¥" + '</span>';
+  for (let i = 0; i < lives; i++) html += `<span class="life${lives === 1 ? ' last-life' : ''}">♥</span>`;
   for (let i = 0; i < lost; i++) {
     const animate = animateLost && i === lost - 1 ? ' just-lost' : '';
-    html += `<span class="life lost${animate}">â¥</span>`;
+    html += `<span class="life lost${animate}">♡</span>`;
   }
   el.innerHTML = html;
   lastLives = lives;
