@@ -213,7 +213,7 @@ function showHowToPlay() {
       <h2>How to Play</h2>
       <div class="howto">
         <p><b>Drag</b> one word bubble onto another to try grouping them.</p>
-        <p>Wait through the short scramble â <b>same-topic words merge</b> and show mixed letters.</p>
+        <p>Wait through the short scramble — <b>same-topic words merge</b> and show mixed letters.</p>
         <p>Merge every word of a topic to <b>reveal its hidden category</b>.</p>
         <p>Wrong pairs flash red and count as <b>mistakes</b>. Too many mistakes cost a <b>life</b> and restart the level.</p>
         <p>Lose all three lives and the run ends. <b>Hints</b>: one per topic per level.</p>
@@ -232,7 +232,7 @@ function showLevelSelect() {
       <div class="level-grid">
         ${LEVELS.map(
           (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
-            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? 'â ' : '') : 'ð'}
+            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? '✓ ' : '') : '🔒'}
           </button>`
         ).join('')}
       </div>
@@ -280,7 +280,7 @@ function warnStorage() {
   storageWarned = true;
   const note = document.createElement('div');
   note.className = 'storage-note';
-  note.textContent = 'â  Browser storage unavailable â progress may not be saved.';
+  note.textContent = '⚠ Browser storage unavailable — progress may not be saved.';
   app.appendChild(note);
   setTimeout(() => note.remove(), 6000);
 }
@@ -330,7 +330,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   screen().innerHTML = `
     <div class="menu-screen">
       <h2>Welcome to WordWise!</h2>
-      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them â correct groups reveal hidden categories.</p>
+      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them — correct groups reveal hidden categories.</p>
       <div id="t-board" class="tutorial-board"></div>
       <p class="tutorial-hint">In the real game, wrong matches cost mistakes. Here, just practise the drag.</p>
       <div class="menu-buttons"><button class="btn" id="t-skip">Skip to Level 1</button></div>
@@ -355,7 +355,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   tBoard.onAttempt = async (): Promise<AttemptResult> => {
     screen().innerHTML = `
       <div class="menu-screen">
-        <h2>Perfect! ð</h2>
+        <h2>Perfect! 🎉</h2>
         <p>Words in the same hidden group merge, mix their letters, and finally reveal the category name.</p>
         <div class="menu-buttons"><button class="btn" id="t-next">Start Level 1</button></div>
       </div>
@@ -642,7 +642,7 @@ function checkLevelComplete() {
     }
     if (replay) {
       // Replay: celebrate then return to Level Select.
-      celebrate(`Level ${state.levelId} Complete! ð`);
+      celebrate(`Level ${state.levelId} Complete! 🎉`);
       setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
@@ -655,7 +655,7 @@ function checkLevelComplete() {
     const instance = newInstanceFor(nextId);
     state = startLevel(instance, state.lives);
     board.resetLayout();
-    celebrate(`Level ${state.levelId} Complete! ð`);
+    celebrate(`Level ${state.levelId} Complete! 🎉`);
     render();
     maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
@@ -825,7 +825,7 @@ function showGameOver() {
 
 function showRunComplete() {
   const overlay = showModal(`
-    <h2>All levels complete! ð</h2>
+    <h2>All levels complete! 🎉</h2>
     <div class="menu-buttons"><button class="btn" id="btn-main">Main Menu</button></div>
   `);
   overlay.querySelector('#btn-main')!.addEventListener('click', () => {
