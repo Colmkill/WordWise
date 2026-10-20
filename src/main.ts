@@ -203,7 +203,7 @@ function showMainMenu() {
     });
   }
   screen().querySelector('#mm-howto')!.addEventListener('click', showHowToPlay);
-  screen().querySelector('#mm-levels')!.addEventListener('click', showLevelSelect);
+  screen().querySelector('#mm-levels')!.addEventListener('click', () => showLevelSelect());
   screen().querySelector('#mm-settings')!.addEventListener('click', () => showSettingsPanel());
 }
 
@@ -718,7 +718,7 @@ function checkLevelComplete() {
         warnStorage();
       }
       celebrate(`Level ${state.levelId} Complete! 🎉`);
-      setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
+      setTimeout(() => showLevelSelect(), LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
     const nextId = state.levelId + 1;
