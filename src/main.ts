@@ -47,26 +47,30 @@ let paused = false;
 
 // --- Level instances (topic variation) ---------------------------------------
 //
-// The shipped ladder (LEVELS) is the curated first playthrough: every level
-// played for the first time in a session shows its shipped topics and words.
-// Restarting, replaying or returning to an already-played level generates a
-// fresh, fully validated instance of the same level number (the difficulty
-// rules belong to the level number; only the content selection varies; see
+// Every entry point - first play, restart, replay, new run, advance - hands
+// the player a fresh, fully validated instance of the same level number (the
+// difficulty rules belong to the level number; only the content selection
+// varies; see
 // core/level-builder.ts nextLevelInstance).
 //
 // instanceHistory carries word-disjointness and concept spacing across every
 // instance of the session; instanceSeq is the session-wide spacing counter;
-// instanceNonce varies the deterministic draw per instance.
+// instanceNonce varies the deterministic draw per instance. sessionSalt is
+// drawn once per page load, so every session - including each player's very
+// first encounter with a level - plays a different selection. The shipped
+// ladder (LEVELS) is never shown as a first choice: it serves as the
+// graceful fallback when the eligible pools are exhausted, and as the
+// deterministic reference pinned by the test suite.
 
-/** The level currently on screen (shipped or generated instance). */
+/** The level currently on screen (generated instance or shipped fallback). */
 let currentLevelInstance: Level = LEVELS[0];
 let instanceHistory: LevelInstanceHistory = { usedByConcept: new Map(), lastLevelOf: new Map() };
 let instanceSeq = 0;
 let instanceNonce = 1;
+/** Random per-session draw offset: each session's instances differ. */
+const sessionSalt = Math.floor(Math.random() * 0x7fffffff) + 1;
 /** Concepts of the most recent instance, for the variation overlap check. */
 let lastInstanceConcepts: string[] = [];
-/** Level numbers already started this session (first start = shipped level). */
-const startedLevels = new Set<number>();
 /**
  * Increments whenever a new level instance replaces the one on screen.
  * Delayed callbacks capture the value and cancel themselves when it moved
@@ -95,45 +99,42 @@ function recordInstance(level: Level): void {
 }
 
 /**
- * The level instance to hand to an entry point (restart, replay, new run,
- * advance). First start of a level this session returns the shipped level;
- * later entries generate a fresh validated variant of the same level
- * number. Falls back to the shipped level when the eligible pools are
- * exhausted, so play never blocks. Also installs the instance as the
+ * The level instance to hand to an entry point (first play, restart, replay,
+ * new run, advance). ALWAYS a fresh, fully validated variant of the level
+ * number: on a level's first start this session the variation moves away
+ * from the shipped ladder's topic selection, so no two sessions share a
+ * fixed first encounter; later entries move away from whatever the player
+ * saw last. Falls back to the shipped level only when the eligible pools
+ * are exhausted, so play never blocks. Also installs the instance as the
  * current level, invalidates stale callbacks, and returns it.
  */
 function newInstanceFor(levelId: number): Level {
   const shipped = LEVELS[levelId - 1];
+  const previous = lastInstanceConcepts.length > 0 ? lastInstanceConcepts : shipped.topics.map((t) => t.concept);
+  const outcome = nextLevelInstance(
+    WORD_BANKS,
+    LEVEL_SEED,
+    levelId,
+    sessionSalt + instanceNonce,
+    instanceSeq + 1,
+    instanceHistory,
+    previous,
+    { ambiguity: true },
+    shipped
+  );
   let level: Level;
-  if (!startedLevels.has(levelId)) {
+  if (outcome.fallback) {
+    // Pools exhausted: play the shipped level (always valid) and record it
+    // so its words count toward disjointness on the next attempt.
     level = shipped;
     recordInstance(shipped);
   } else {
-    const outcome = nextLevelInstance(
-      WORD_BANKS,
-      LEVEL_SEED,
-      levelId,
-      instanceNonce,
-      instanceSeq + 1,
-      instanceHistory,
-      lastInstanceConcepts,
-      { ambiguity: true },
-      shipped
-    );
-    if (outcome.fallback) {
-      // Pools exhausted: replay the shipped level (always valid) and record
-      // it so its words count toward disjointness on the next attempt.
-      level = shipped;
-      recordInstance(shipped);
-    } else {
-      level = outcome.level;
-      instanceHistory = outcome.history;
-      instanceSeq++;
-      instanceNonce++;
-      lastInstanceConcepts = level.topics.map((t) => t.concept);
-    }
+    level = outcome.level;
+    instanceHistory = outcome.history;
+    instanceSeq++;
+    instanceNonce++;
+    lastInstanceConcepts = level.topics.map((t) => t.concept);
   }
-  startedLevels.add(levelId);
   currentLevelInstance = level;
   bumpGeneration();
   return level;
@@ -211,7 +212,7 @@ function showHowToPlay() {
       <h2>How to Play</h2>
       <div class="howto">
         <p><b>Drag</b> one word bubble onto another to try grouping them.</p>
-        <p>Wait through the short scramble — <b>same-topic words merge</b> and show mixed letters.</p>
+        <p>Wait through the short scramble â <b>same-topic words merge</b> and show mixed letters.</p>
         <p>Merge every word of a topic to <b>reveal its hidden category</b>.</p>
         <p>Wrong pairs flash red and count as <b>mistakes</b>. Too many mistakes cost a <b>life</b> and restart the level.</p>
         <p>Lose all three lives and the run ends. <b>Hints</b>: one per topic per level.</p>
@@ -230,7 +231,7 @@ function showLevelSelect() {
       <div class="level-grid">
         ${LEVELS.map(
           (l) => `<button class="btn level-btn ${l.id <= highest ? '' : 'locked'}" data-id="${l.id}" ${l.id <= highest ? '' : 'disabled'}>
-            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? '✓ ' : '') : '🔒'}
+            ${l.id}. ${l.id <= highest ? ((checkpoint?.completedLevels ?? []).includes(l.id) ? 'â ' : '') : 'ð'}
           </button>`
         ).join('')}
       </div>
@@ -278,7 +279,7 @@ function warnStorage() {
   storageWarned = true;
   const note = document.createElement('div');
   note.className = 'storage-note';
-  note.textContent = '⚠ Browser storage unavailable — progress may not be saved.';
+  note.textContent = 'â  Browser storage unavailable â progress may not be saved.';
   app.appendChild(note);
   setTimeout(() => note.remove(), 6000);
 }
@@ -328,7 +329,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   screen().innerHTML = `
     <div class="menu-screen">
       <h2>Welcome to WordWise!</h2>
-      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them — correct groups reveal hidden categories.</p>
+      <p class="tutorial-hint">Drag <b>one</b> onto <b>two</b> to merge them â correct groups reveal hidden categories.</p>
       <div id="t-board" class="tutorial-board"></div>
       <p class="tutorial-hint">In the real game, wrong matches cost mistakes. Here, just practise the drag.</p>
       <div class="menu-buttons"><button class="btn" id="t-skip">Skip to Level 1</button></div>
@@ -353,7 +354,7 @@ function startTutorialIfNeeded(onDone: () => void) {
   tBoard.onAttempt = async (): Promise<AttemptResult> => {
     screen().innerHTML = `
       <div class="menu-screen">
-        <h2>Perfect! 🎉</h2>
+        <h2>Perfect! ð</h2>
         <p>Words in the same hidden group merge, mix their letters, and finally reveal the category name.</p>
         <div class="menu-buttons"><button class="btn" id="t-next">Start Level 1</button></div>
       </div>
@@ -411,10 +412,10 @@ function renderLives(lives: number) {
   const animateLost = lives < lastLives;
   el.setAttribute('aria-label', `Lives: ${lives} of ${STARTING_LIVES}`);
   let html = '';
-  for (let i = 0; i < lives; i++) html += '<span class="life">' + "♥" + '</span>';
+  for (let i = 0; i < lives; i++) html += '<span class="life">' + "â¥" + '</span>';
   for (let i = 0; i < lost; i++) {
     const animate = animateLost && i === lost - 1 ? ' just-lost' : '';
-    html += `<span class="life lost${animate}">♥</span>`;
+    html += `<span class="life lost${animate}">â¥</span>`;
   }
   el.innerHTML = html;
   lastLives = lives;
@@ -638,7 +639,7 @@ function checkLevelComplete() {
     }
     if (replay) {
       // Replay: celebrate then return to Level Select.
-      celebrate(`Level ${state.levelId} Complete! 🎉`);
+      celebrate(`Level ${state.levelId} Complete! ð`);
       setTimeout(showLevelSelect, LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
@@ -651,7 +652,7 @@ function checkLevelComplete() {
     const instance = newInstanceFor(nextId);
     state = startLevel(instance, state.lives);
     board.resetLayout();
-    celebrate(`Level ${state.levelId} Complete! 🎉`);
+    celebrate(`Level ${state.levelId} Complete! ð`);
     render();
     maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
@@ -821,7 +822,7 @@ function showGameOver() {
 
 function showRunComplete() {
   const overlay = showModal(`
-    <h2>All levels complete! 🎉</h2>
+    <h2>All levels complete! ð</h2>
     <div class="menu-buttons"><button class="btn" id="btn-main">Main Menu</button></div>
   `);
   overlay.querySelector('#btn-main')!.addEventListener('click', () => {
@@ -835,3 +836,4 @@ function showRunComplete() {
 sync();
 buildShell();
 showMainMenu();
+

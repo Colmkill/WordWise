@@ -79,6 +79,51 @@ describe('level instance generation', () => {
     }
   });
 
+  it('varies a level FIRST encounter away from the shipped selection', () => {
+    // First start of a level this session: empty history, and the variation
+    // moves away from the shipped ladder's topics (see newInstanceFor in
+    // main.ts). The session salt changes only the draw, never the rules.
+    const shipped = LEVELS[4]; // level 5
+    const outcome = nextLevelInstance(
+      WORD_BANKS,
+      LEVEL_SEED,
+      5,
+      1234567,
+      1,
+      freshHistory(),
+      conceptsOf(shipped),
+      { ambiguity: true },
+      shipped
+    );
+    expect(outcome.fallback).toBe(false);
+    expect(outcome.level).not.toEqual(shipped);
+    expect(outcome.level.topics.filter((t) => conceptsOf(shipped).includes(t.concept))).toHaveLength(0);
+    expect(problemsOf(outcome.level)).toEqual([]);
+  });
+
+  it('gives different sessions (salts) different first encounters', () => {
+    const shipped = LEVELS[0];
+    const mk = (salt: number) =>
+      nextLevelInstance(
+        WORD_BANKS,
+        LEVEL_SEED,
+        1,
+        salt + 1,
+        1,
+        freshHistory(),
+        conceptsOf(shipped),
+        { ambiguity: true },
+        shipped
+      );
+    const a = mk(111);
+    const b = mk(222);
+    expect(a.fallback).toBe(false);
+    expect(b.fallback).toBe(false);
+    expect(a.level).not.toEqual(b.level);
+    expect(problemsOf(a.level)).toEqual([]);
+    expect(problemsOf(b.level)).toEqual([]);
+  });
+
   it('produces valid, non-fallback instances across repeated restarts of several levels', () => {
     for (const id of [1, 10, 25, 40, 60, 85, 100]) {
       const shipped = LEVELS[id - 1];
@@ -185,3 +230,4 @@ describe('level instance generation', () => {
     expect(regenerated).toEqual(LEVELS);
   });
 });
+
