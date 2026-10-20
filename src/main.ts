@@ -159,6 +159,7 @@ const screen = () => document.querySelector<HTMLElement>('#screen')!;
 function showMainMenu() {
   replay = false;
   paused = false;
+  regenerateBackground();
   const hasSave = checkpoint !== null && (checkpoint.completedLevels.length > 0 || checkpoint.highestUnlocked > 1);
   screen().innerHTML = `
     <div class="menu-screen">
@@ -559,9 +560,10 @@ function restartAfterLifeLoss(lives: number): Level {
 
 /**
  * Decorative background: repopulates the floating-colour-bubble layer with a
- * fresh random arrangement. Called once per genuinely new level (guarded by
- * isFreshLevel), never on ordinary renders. Purely aesthetic: the layer is
- * pointer-events:none and sits behind #screen, fully isolated from gameplay.
+ * fresh random arrangement. Called on the main menu and once per genuinely
+ * new level (guarded by isFreshLevel), never on ordinary renders. Purely
+ * aesthetic: the layer is pointer-events:none and sits behind #screen,
+ * fully isolated from gameplay.
  */
 function regenerateBackground() {
   const layer = document.querySelector<HTMLElement>('#bg-bubbles');
@@ -569,7 +571,7 @@ function regenerateBackground() {
   layer.innerHTML = '';
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const count = Math.max(1236, Math.min(120, Math.round((w * h) / 7300)));
+  const count = Math.max(120, Math.min(1236, Math.round((w * h) / 7300)));
   for (let i = 0; i < count; i++) {
     const size = 50 + Math.random() * 78; // 50-90px
     const hue = Math.floor(Math.random() * 360);
