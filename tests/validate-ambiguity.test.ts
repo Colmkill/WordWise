@@ -102,21 +102,21 @@ describe('shipped levels', () => {
   // Claim locations of the shipped content are pinned: any generator or
   // bank change that moves them fails loudly and forces a conscious
   // re-baselining (see the snapshot test in cross-topic.test.ts).
-  it('claims cross-topic words only in the known levels', () => {
-    const claimedLevels = LEVELS.filter(
-      (l) => claimedCrossTopicWords(l).length > 0
-    ).map((l) => l.id);
-    expect(claimedLevels).toEqual([
-      6,27,35,38,42,44,45,47,55,56,57,58,60,61,62,64,65,69,84
-    ]);
-  });
+it('claims cross-topic words only in the known levels', () => {
+  const claimedLevels = LEVELS.filter(
+    (l) => claimedCrossTopicWords(l).length > 0
+  ).map((l) => l.id);
+  expect(claimedLevels).toEqual([
+    6,27,35,38,42,44,45,47,55,56,57,58,60,61,62,64,65,69,84
+  ]);
+});
 
-  it('never displays a cross-topic word in two topics of one level', () => {
-    for (const l of LEVELS) {
-      const issues = validateAmbiguity(l, Number.POSITIVE_INFINITY);
-      expect(issues).toEqual([]);
-    }
-  });
+it('never displays a cross-topic word in two topics of one level', () => {
+  for (const l of LEVELS) {
+    const issues = validateAmbiguity(l, Number.POSITIVE_INFINITY);
+    expect(issues).toEqual([]);
+  }
+});
 
   // Budget policy: the ramp (ambiguityFor) governs how many cross-topic
   // words a level SEEKS. Beyond the ramp, one incidental claim per level
