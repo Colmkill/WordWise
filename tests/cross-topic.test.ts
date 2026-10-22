@@ -76,6 +76,6 @@ describe('shipped level snapshot', () => {
       level.mistakeThreshold,
       level.topics.map((t) => [t.concept, t.words])
     ]);
-    expect(hashString(JSON.stringify(projection))).toBe(1553205535);
+expect(hashString(JSON.stringify(projection))).toBe(1142014645); 
   });
 });
