@@ -107,7 +107,7 @@ it('claims cross-topic words only in the known levels', () => {
     (l) => claimedCrossTopicWords(l).length > 0
   ).map((l) => l.id);
   expect(claimedLevels).toEqual([
-    6,27,35,38,42,44,45,47,55,56,57,58,60,61,62,64,65,69,84
+    6, 24, 27, 35, 38, 42, 44, 45, 47, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 69, 70, 87, 100
   ]);
 });
 
