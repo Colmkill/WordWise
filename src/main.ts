@@ -683,6 +683,7 @@ function isFreshLevel(): boolean {
   );
 }
 
+
 function checkLevelComplete() {
   if (state.status !== 'levelComplete' || advancing) return;
   advancing = true;
@@ -730,7 +731,7 @@ function checkLevelComplete() {
     const instance = newInstanceFor(nextId);
     state = startLevel(instance, state.lives);
     board.resetLayout();
-    celebrate(`Level ${state.levelId} Complete! 🎉`);
+     celebrate(`Level ${completedLevelId} Complete! 🎉`);
     render();
     maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
