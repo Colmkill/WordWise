@@ -691,7 +691,11 @@ function checkLevelComplete() {
   setTimeout(() => {
     advancing = false;
     if (gen !== generation) return;
-    // Save the completed-level checkpoint (main run only).
+
+    // Save the completed level ID for the celebration message
+    const completedLevelId = state.levelId;
+
+    // Save checkpoint logic...
     if (!replay) {
       const cp = checkpointFrom(state, LEVELS.length);
       if (saveCheckpoint(cp)) {
@@ -700,28 +704,14 @@ function checkLevelComplete() {
         warnStorage();
       }
     }
+
     if (replay) {
-      // Replay: celebrate then return to Level Select. Completing a level
-      // here still counts as progress: the level is marked completed (and
-      // the next one unlocks when the frontier level was beaten), so the
-      // Level Select grid shows the check on return. Main-run lives are
-      // never touched by a replay.
-      const prev = checkpoint;
-      const cp = {
-        completedLevels: Array.from(new Set([...(prev?.completedLevels ?? []), state.levelId])),
-        highestUnlocked: Math.min(LEVELS.length, Math.max(prev?.highestUnlocked ?? 1, state.levelId + 1)),
-        lives: prev?.lives ?? STARTING_LIVES,
-        tutorialDone: prev?.tutorialDone ?? true
-      };
-      if (saveCheckpoint(cp)) {
-        checkpoint = loadCheckpoint();
-      } else {
-        warnStorage();
-      }
-      celebrate(`Level ${state.levelId} Complete! 🎉`);
+      // Replay logic...
+      celebrate(`Level ${completedLevelId} Complete! 🎉`);
       setTimeout(() => showLevelSelect(), LEVEL_COMPLETE_PAUSE_MS);
       return;
     }
+
     const nextId = state.levelId + 1;
     if (nextId > LEVELS.length) {
       showRunComplete();
@@ -731,7 +721,7 @@ function checkLevelComplete() {
     const instance = newInstanceFor(nextId);
     state = startLevel(instance, state.lives);
     board.resetLayout();
-     celebrate(`Level ${completedLevelId} Complete! 🎉`);
+    celebrate(`Level ${completedLevelId} Complete! 🎉`);  // ✅ Now shows correct level
     render();
     maybeLaunchSequence();
   }, LEVEL_COMPLETE_PAUSE_MS);
