@@ -144,7 +144,7 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   trees: 1, vegetables: 1, weather: 1, zoo: 1,
 
   // 2 = common, familiar to most people
-  airport: 2, bank: 2, barbecue: 2, bicycle: 2, boating: 2, body: 2, calendar: 2, castle: 2,
+  airport: 2, astrology: 2, bank: 2, barbecue: 2, bicycle: 2, boating: 2, body: 2, calendar: 2, castle: 2,
   cinema: 2, circus: 2, coffee: 2, computers: 2, cricket: 2, cycling: 2, dairy: 2, dance: 2,
   dentist: 2, desert: 2, dinosaurs: 2, drawing: 2, dreams: 2, education: 2, emotions: 2,
   fashion: 2, festival: 2, fire: 2, fishing: 2, forest: 2, golf: 2, health: 2, herbs: 2,

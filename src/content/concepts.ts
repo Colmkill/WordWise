@@ -31,6 +31,7 @@ export const TOPIC_CONCEPTS: Record<string, TopicConcept> = {
   archery: { slug: 'archery', category: 'ARCHERY', hint: 'Draw a bow.' },
   architecture: { slug: 'architecture', category: 'ARCHITECTURE', hint: 'Designing buildings.' },
   astronomy: { slug: 'astronomy', category: 'ASTRONOMY', hint: 'Study the stars.' },
+  astrology: { slug: 'astrology', category: 'ASTROLOGY', hint: 'Zodiac signs, horoscopes, and celestial predictions.' },
   athletics: { slug: 'athletics', category: 'ATHLETICS', hint: 'Track and field: running, jumping, and throwing.' },
   autumn: { slug: 'autumn', category: 'AUTUMN', hint: 'Falling leaves and the slow turn toward colder days.' },
   baking: { slug: 'baking', category: 'BAKING', hint: 'Flour, heat, and the smell of something rising in the oven.' },

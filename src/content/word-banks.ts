@@ -27,6 +27,7 @@ export const WORD_BANKS: Record<string, string[]> = {
   archery: ['quiver', 'bowstring', 'bullseye', 'arrowhead', 'fletching', 'longbow', 'crossbow', 'nock', 'draw', 'target', 'release', 'limb'],
   architecture: ['blueprint', 'facade', 'column', 'archway', 'dome', 'cornice', 'balustrade', 'atrium', 'vault', 'pediment', 'buttress'],
   astronomy: ['nebula', 'galaxy', 'pulsar', 'quasar', 'eclipse', 'constellation', 'supernova', 'asteroid', 'comet', 'telescope', 'solstice', 'light-year'],
+  astrology: ['zodiac', 'horoscope', 'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces', 'ascendant', 'natal chart', 'mercury retrograde', 'star sign'],
   athletics: ['sprint', 'hurdles', 'discus', 'shot put', 'long jump', 'high jump', 'pole vault', 'decathlon', 'steeplechase'],
   autumn: ['harvest', 'foliage', 'acorn', 'conker', 'pumpkin', 'bonfire', 'equinox', 'chestnut', 'leaf litter', 'mushroom', 'migration', 'scarecrow'],
   baking: ['flour', 'yeast', 'rolling pin', 'dough', 'whisk', 'pastry', 'preheat', 'sourdough', 'crumb'],
