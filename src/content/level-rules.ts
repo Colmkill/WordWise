@@ -187,7 +187,14 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   famous_gardens: 2, famous_fountains: 2, famous_ruins: 3, unesco_sites: 3,
   famous_waterfalls: 2, famous_canyons: 2, famous_caves: 2, famous_lakes: 2,
   coastal_formations: 2, national_parks: 2, famous_islands: 2,
-  archaeological_discoveries: 4
+  archaeological_discoveries: 4,
+  capital_cities: 2, countries_by_continent: 2, geographic_features: 2, borders: 2,
+  landforms: 2, climate_regions: 2, biomes: 2, time_zones: 3, islands_by_type: 2,
+  mountain_ranges: 2, rivers_by_continent: 2, deserts_by_continent: 2, lakes_by_continent: 2,
+  seas_and_gulfs: 2, straits_and_channels: 2, peninsulas_and_capes: 2,
+  cities_by_population: 2, historic_cities: 2, port_cities: 2, mountain_cities: 2,
+  island_capitals: 2, cities_with_canals: 2, cities_known_for_architecture: 2,
+  place_name_origins: 3, place_names_by_language: 3
 };
 
 /** The rule band covering a given level number, if any. */
