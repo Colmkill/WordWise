@@ -181,7 +181,13 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
 
   // 5 = obscure, expert-level vocabulary
   glassblowing: 5, horology: 5, linguistics: 5, mycology: 5, ornithology: 5, sailing: 5,
-  typography: 5
+  typography: 5,
+  ancient_wonders: 3, modern_wonders: 3, famous_palaces: 3, famous_temples: 3,
+  famous_statues: 3, famous_memorials: 3, famous_towers: 3, famous_museums: 3,
+  famous_gardens: 2, famous_fountains: 2, famous_ruins: 3, unesco_sites: 3,
+  famous_waterfalls: 2, famous_canyons: 2, famous_caves: 2, famous_lakes: 2,
+  coastal_formations: 2, national_parks: 2, famous_islands: 2,
+  archaeological_discoveries: 4
 };
 
 /** The rule band covering a given level number, if any. */
