@@ -175,6 +175,9 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   journalism: 4, logic: 4, manufacturing: 4, meteorology: 4, numismatics: 4, oenology: 4,
   orchestra: 4, philosophy: 4, psychology: 4, robotics: 4, tailoring: 4, taxonomy: 4,
   textiles: 4, veterinary: 4, volcano: 4,
+  sewing_equipment: 2, meteorological_measurement: 4, breadmaking_technique: 3,
+  gemstone_cutting: 4, printmaking_method: 4, bookbinding_craft: 4,
+  medieval_weaponry: 4, leathercraft: 3, beekeeping_products: 2, calligraphy_technique: 3,
 
   // 5 = obscure, expert-level vocabulary
   glassblowing: 5, horology: 5, linguistics: 5, mycology: 5, ornithology: 5, sailing: 5,
