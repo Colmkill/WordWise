@@ -207,7 +207,22 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   rhymes_with_flame: 3, rhymes_with_dream: 3, rhymes_with_cold: 3,
   rhymes_with_sweet: 3, rhymes_with_round: 3, rhymes_with_time: 3,
   rhymes_with_blue: 3, rhymes_with_star: 3, rhymes_with_gold: 3,
-  rhymes_with_face: 3, rhymes_with_bell: 3, rhymes_with_play: 3
+  rhymes_with_face: 3, rhymes_with_bell: 3, rhymes_with_play: 3,
+  mystical_expressions: 3, enchanted_objects: 3, magical_ingredients: 3,
+  magical_creatures: 3, supernatural_beings: 3, legendary_spirits: 3,
+  ghostly_phenomena: 3, haunted_locations: 3, supernatural_encounters: 3,
+  strange_omens: 3, prophetic_visions: 3, divination_methods: 3,
+  fortune_telling_traditions: 3, mystical_symbols: 3, ancient_mystical_traditions: 4,
+  magical_transformations: 3, curses_and_enchantments: 3, protective_charms: 3,
+  magical_ceremonies: 3, mystical_landscapes: 3, otherworldly_realms: 4,
+  legendary_underworlds: 4, celestial_beings: 4, demonic_figures: 4,
+  angels_in_mythology: 4, trickster_spirits: 3, shape_shifting_beings: 3,
+  legendary_guardians: 3, creatures_of_the_night: 3, supernatural_powers: 3,
+  psychic_phenomena: 3, extrasensory_perception: 3, astral_projection: 4,
+  premonitions: 3, apparitions: 3, spectral_phenomena: 3, folkloric_monsters: 3,
+  legendary_sea_creatures: 3, mythical_birds: 3, legendary_serpents: 3,
+  magical_plants: 3, alchemical_symbolism: 4, occult_terminology: 4,
+  esoteric_traditions: 4, mystical_poetry: 3, supernatural_folklore: 3
 };
 
 /** The rule band covering a given level number, if any. */
