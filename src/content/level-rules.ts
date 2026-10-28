@@ -222,7 +222,22 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   premonitions: 3, apparitions: 3, spectral_phenomena: 3, folkloric_monsters: 3,
   legendary_sea_creatures: 3, mythical_birds: 3, legendary_serpents: 3,
   magical_plants: 3, alchemical_symbolism: 4, occult_terminology: 4,
-  esoteric_traditions: 4, mystical_poetry: 3, supernatural_folklore: 3
+  esoteric_traditions: 4, mystical_poetry: 3, supernatural_folklore: 3,
+  greek_mythology: 3, roman_mythology: 3, norse_mythology: 3,
+  egyptian_mythology: 3, celtic_mythology: 3, japanese_mythology: 3,
+  chinese_mythology: 3, hindu_mythology: 3, aboriginal_dreaming: 4,
+  polynesian_mythology: 3, african_mythology: 3, mesoamerican_mythology: 3,
+  slavic_folklore: 3, arthurian_legends: 3, legendary_heroes: 3,
+  legendary_villains: 3, legendary_kings_queens: 3, mythological_weapons: 3,
+  mythological_animals: 3, mythological_transformations: 3, legendary_quests: 3,
+  legendary_treasures: 3, legendary_cities: 3, creation_myths: 4,
+  flood_myths: 4, underworld_myths: 4, trickster_tales: 3,
+  heroic_trials: 3, legendary_prophecies: 3, folktale_characters: 3,
+  folktale_settings: 3, traditional_fairy_tale_characters: 2,
+  fairy_tale_objects: 2, fairy_tale_transformations: 3,
+  folkloric_explanations: 3, legendary_monsters: 3,
+  famous_legendary_journeys: 3, mythological_family_relationships: 4,
+  legendary_origins_of_constellations: 4
 };
 
 /** The rule band covering a given level number, if any. */
