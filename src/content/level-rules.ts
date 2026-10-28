@@ -194,7 +194,20 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   seas_and_gulfs: 2, straits_and_channels: 2, peninsulas_and_capes: 2,
   cities_by_population: 2, historic_cities: 2, port_cities: 2, mountain_cities: 2,
   island_capitals: 2, cities_with_canals: 2, cities_known_for_architecture: 2,
-  place_name_origins: 3, place_names_by_language: 3
+  place_name_origins: 3, place_names_by_language: 3,
+  words_ending_in_out: 2, words_ending_in_ing: 2, words_ending_in_ight: 2,
+  words_ending_in_ound: 2, words_ending_in_ake: 2, words_ending_in_ash: 2,
+  words_ending_in_ate: 2, words_ending_in_tion: 2, words_ending_in_ment: 2,
+  words_ending_in_ness: 2, words_ending_in_ship: 2, words_ending_in_hood: 2,
+  words_ending_in_ward: 2, words_ending_in_wise: 2, words_ending_in_er: 2,
+  words_ending_in_est: 2, words_ending_in_ed: 2, words_ending_in_ly: 2,
+  words_ending_in_y: 2, rhymes_with_light: 3, rhymes_with_stone: 3,
+  rhymes_with_train: 3, rhymes_with_sound: 3, rhymes_with_green: 3,
+  rhymes_with_bright: 3, rhymes_with_night: 3, rhymes_with_chair: 3,
+  rhymes_with_flame: 3, rhymes_with_dream: 3, rhymes_with_cold: 3,
+  rhymes_with_sweet: 3, rhymes_with_round: 3, rhymes_with_time: 3,
+  rhymes_with_blue: 3, rhymes_with_star: 3, rhymes_with_gold: 3,
+  rhymes_with_face: 3, rhymes_with_bell: 3, rhymes_with_play: 3
 };
 
 /** The rule band covering a given level number, if any. */
