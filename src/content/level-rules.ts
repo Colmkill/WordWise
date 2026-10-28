@@ -284,7 +284,30 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   slang_by_generation: 2, regional_english_expressions: 2,
   australian_expressions: 2, british_expressions: 2, american_expressions: 2,
   tongue_twisters: 2, rhyming_sayings: 2, traditional_riddles: 3,
-  double_meaning_expressions: 2
+  double_meaning_expressions: 2,
+  ancient_egyptian_civilisation: 3, ancient_greek_civilisation: 3, ancient_roman_civilisation: 3,
+  ancient_mesopotamia: 3, ancient_persia: 3, ancient_china: 3,
+  ancient_india: 3, ancient_japan: 3, ancient_african_kingdoms: 4,
+  ancient_mesoamerican_civilisations: 4, the_viking_age: 3, medieval_europe: 3,
+  medieval_occupations: 3, medieval_daily_life: 3, medieval_clothing: 3,
+  medieval_entertainment: 3, medieval_law_and_justice: 3, medieval_trade: 3,
+  the_renaissance: 3, the_age_of_exploration: 3, the_industrial_revolution: 3,
+  the_enlightenment: 3, the_history_of_printing: 3, the_history_of_navigation: 3,
+  the_history_of_medicine: 3, the_history_of_transportation: 3, the_history_of_communication: 3,
+  the_history_of_photography: 3, the_history_of_cinema: 3, the_history_of_aviation: 3,
+  the_history_of_computing: 3, the_history_of_money: 3, the_history_of_banking: 3,
+  the_history_of_education: 3, the_history_of_fashion: 2, the_history_of_food_preservation: 3,
+  the_history_of_musical_instruments: 3, the_history_of_timekeeping: 3,
+  the_history_of_cartography: 3, the_history_of_writing_systems: 3,
+  ancient_writing_materials: 4, ancient_measurement_systems: 4,
+  historical_trade_routes: 3, historical_empires_by_region: 3,
+  historical_inventions_by_period: 3, famous_historical_discoveries: 3,
+  famous_explorers: 2, famous_inventors: 2, famous_archaeologists: 3,
+  historical_diplomatic_events: 3, historical_revolutions: 3, historical_treaties: 3,
+  historical_court_cases: 4, historical_mysteries: 3, lost_civilisations: 4,
+  historical_occupations: 3, historical_forms_of_entertainment: 3,
+  historical_forms_of_punishment: 3, historical_clothing_and_accessories: 3,
+  historical_household_objects: 3
 };
 
 /** The rule band covering a given level number, if any. */
