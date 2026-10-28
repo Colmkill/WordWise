@@ -263,7 +263,28 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   words_with_unusual_past_tense_forms: 3, words_with_multiple_accepted_pronunciations: 3,
   words_with_no_direct_translation: 4, false_friends_between_languages: 3,
   types_of_semantic_change: 4, types_of_word_formation: 3, types_of_grammatical_construction: 4,
-  types_of_translation_challenge: 4
+  types_of_translation_challenge: 4,
+  common_idioms: 2, unusual_idioms: 3, idioms_involving_animals: 2,
+  idioms_involving_food: 2, idioms_involving_weather: 2, idioms_involving_body_parts: 2,
+  idioms_involving_colours: 2, idioms_involving_money: 2, idioms_involving_travel: 2,
+  idioms_involving_time: 2, idioms_involving_clothing: 2, idioms_involving_household_objects: 2,
+  idioms_involving_nature: 2, idioms_involving_sport: 2,
+  expressions_about_emotions: 2, expressions_about_luck: 2, expressions_about_deception: 3,
+  expressions_about_success: 2, expressions_about_failure: 2, expressions_about_conflict: 2,
+  expressions_about_friendship: 2, expressions_about_secrecy: 3, expressions_about_confusion: 2,
+  expressions_about_impatience: 2, expressions_about_surprise: 2,
+  traditional_proverbs: 2, proverbs_from_around_the_world: 3,
+  sayings_about_wisdom: 2, sayings_about_work: 2, sayings_about_relationships: 2,
+  sayings_about_money: 2, sayings_about_learning: 2, sayings_about_nature: 2,
+  sayings_about_time: 2, sayings_about_risk: 2,
+  common_catchphrases: 2, famous_quotations_by_theme: 3,
+  shakespearean_expressions: 3, latin_expressions: 3, french_expressions: 3,
+  legal_expressions: 3, medical_expressions: 3, nautical_expressions: 3,
+  military_expressions: 3, business_expressions: 2,
+  slang_by_generation: 2, regional_english_expressions: 2,
+  australian_expressions: 2, british_expressions: 2, american_expressions: 2,
+  tongue_twisters: 2, rhyming_sayings: 2, traditional_riddles: 3,
+  double_meaning_expressions: 2
 };
 
 /** The rule band covering a given level number, if any. */
