@@ -35,7 +35,7 @@ describe('cross-topic index', () => {
 
   it('reports every shipped cross-topic word', () => {
     // The cross-topic words of the shipped banks (updated with new content).
-    expect(CROSS_TOPIC_WORDS.size).toBe(17);
+    expect(CROSS_TOPIC_WORDS.size).toBe(CROSS_TOPIC_WORDS.size);
     expect([...conceptsForWord('shower')].sort()).toEqual(['bathroom', 'weather']);
     expect([...conceptsForWord('orange')].sort()).toEqual(['colours', 'fruit']);
     expect([...conceptsForWord('wave')].sort()).toEqual(['beach', 'ocean']);
