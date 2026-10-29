@@ -445,11 +445,41 @@ mountain_cities: [
   'Bogota', 'Addis Ababa', 'Mexico City', 'Sarajevo', 'Sofia',
   'Tbilisi', 'Kabul', 'Boulder', 'Manali', 'Queenstown'
 ],
-  island_capitals: [],
-  cities_with_canals: [],
-  cities_known_for_architecture: [],
-  place_name_origins: [],
-  place_names_by_language: [],
+ island_capitals: [
+  'Nassau', 'Suva', 'Reykjavik', 'Manila', 'Singapore',
+  'Kingston', 'Port of Spain', 'Malé', 'Victoria', 'Bridgetown',
+  'Valletta', 'Nicosia', 'Majuro', 'Tarawa', 'Apia',
+  'Nuku alofa', 'Port Louis', 'Roseau', 'Basseterre', 'Castries'
+],
+
+cities_with_canals: [
+  'Venice', 'Amsterdam', 'Bruges', 'Suzhou', 'Bangkok',
+  'Birmingham', 'Hamburg', 'Utrecht', 'Copenhagen', 'Stockholm',
+  'Saint Petersburg', 'Aveiro', 'Giethoorn', 'Wroclaw', 'Gothenburg',
+  'Fort Lauderdale', 'Xochimilco', 'Tigre', 'Colmar', 'Chioggia'
+],
+
+cities_known_for_architecture: [
+  'Barcelona', 'Paris', 'Rome', 'Prague', 'Chicago',
+  'Dubai', 'Istanbul', 'Brasilia', 'Florence', 'Vienna',
+  'Jaipur', 'Kyoto', 'Athens', 'Granada', 'Marrakech',
+  'Singapore', 'Beijing', 'Havana', 'Lisbon', 'Antwerp'
+],
+
+place_name_origins: [
+  'Melbourne', 'Adelaide', 'Brisbane', 'Sydney', 'Canberra',
+  'New York', 'Los Angeles', 'San Francisco', 'Philadelphia', 'Vancouver',
+  'Amsterdam', 'Reykjavik', 'Istanbul', 'Singapore', 'Bangkok',
+  'Buenos Aires', 'Rio de Janeiro', 'Cape Town', 'Hong Kong', 'Cairo'
+],
+
+place_names_by_language: [
+  'Aotearoa', 'Deutschland', 'Espana', 'Nippon', 'Suomi',
+  'Sverige', 'Eire', 'Hellas', 'Magyarorszag', 'Osterreich',
+  'Schweiz', 'Polska', 'Cesko', 'Turkiye', 'Misr',
+  'Al-Maghrib', 'Zhōngguó', 'Hanguk', 'Bharat', 'Nederland'
+],
+  
   words_ending_in_out: [],
   words_ending_in_ing: [],
   words_ending_in_ight: [],
