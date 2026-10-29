@@ -350,7 +350,7 @@ islands_by_type: [
   'Volcanic Island', 'Coral Island', 'Barrier Island',
   'Continental Island', 'Oceanic Island', 'Tidal Island',
   'Artificial Island', 'River Island', 'Fluvial Island',
-  'Atoll', 'Cay', 'Skerry', 'Faro', 'Archipelago',
+  'Atoll', 'Skerry', 'Faro', 'Archipelago',
   'Seamount Island', 'Fringing Reef Island', 'Oceanic Atoll',
   'Sandbar Island', 'Delta Island', 'Lava Island'
 ],
