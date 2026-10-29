@@ -277,27 +277,174 @@ export const WORD_BANKS: Record<string, string[]> = {
   coastal_formations: ['Twelve Apostles', 'Giants Causeway', 'Fingals Cave', 'Cliffs of Moher', 'White Cliffs', 'Durdle Door', 'Old Man of Hoy', 'Hopewell Rocks', 'Bay of Fires', 'Remarkable Rocks', 'Admirals Arch', 'Etretat', 'Pulpit Rock', 'fjord', 'sea stack', 'sea arch', 'headland', 'blowhole', 'cove', 'estuary'],
   national_parks: ['Yellowstone', 'Yosemite', 'Serengeti', 'Kruger', 'Banff', 'Kakadu', 'Uluru', 'Denali', 'Torres del Paine', 'Fiordland', 'Everglades', 'Glacier', 'Arches', 'Great Smoky', 'Daintree', 'Flinders Chase', 'Jasper', 'Etosha', 'Komodo', 'wilderness', 'ranger', 'reserve'],
   famous_islands: ['Bali', 'Santorini', 'Madagascar', 'Hawaii', 'Tasmania', 'Iceland', 'Greenland', 'Borneo', 'Sicily', 'Crete', 'Fiji', 'Tahiti', 'Maldives', 'Manhattan', 'Capri', 'Mauritius', 'Zanzibar', 'Kangaroo Island', 'Phillip Island'],
-  archaeological_discoveries: [],
-  capital_cities: [],
-  countries_by_continent: [],
-  geographic_features: [],
-  borders: [],
-  landforms: [],
-  climate_regions: [],
-  biomes: [],
-  time_zones: [],
-  islands_by_type: [],
-  mountain_ranges: [],
-  rivers_by_continent: [],
-  deserts_by_continent: [],
-  lakes_by_continent: [],
-  seas_and_gulfs: [],
-  straits_and_channels: [],
-  peninsulas_and_capes: [],
-  cities_by_population: [],
-  historic_cities: [],
-  port_cities: [],
-  mountain_cities: [],
+archaeological_discoveries: [
+  'Rosetta Stone', 'Terracotta Army', 'Tutankhamun', 'Pompeii', 'Dead Sea Scrolls',
+  'Lascaux Caves', 'Machu Picchu', 'Petra', 'Angkor Wat', 'Stonehenge',
+  'Ötzi', 'Sutton Hoo', 'Antikythera Mechanism', 'Troy', 'Gobekli Tepe',
+  'Nazca Lines', 'Valley of the Kings', 'Herculaneum', 'Mohenjo-daro', 'Sphinx'
+],
+
+capital_cities: [
+  'Canberra', 'London', 'Paris', 'Tokyo', 'Ottawa',
+  'Brasilia', 'Nairobi', 'Cairo', 'Bangkok', 'Seoul',
+  'Wellington', 'Lisbon', 'Reykjavik', 'Hanoi', 'Lima',
+  'Athens', 'Vienna', 'Jakarta', 'Ulaanbaatar', 'Rabat'
+],
+
+countries_by_continent: [
+  'Australia', 'New Zealand', 'Japan', 'China', 'India',
+  'Thailand', 'Vietnam', 'Indonesia', 'Egypt', 'Kenya',
+  'Morocco', 'Nigeria', 'France', 'Germany', 'Norway',
+  'Brazil', 'Argentina', 'Canada', 'Mexico', 'Peru'
+],
+
+geographic_features: [
+  'Great Barrier Reef', 'Grand Canyon', 'Amazon Basin', 'Sahara',
+  'Himalayas', 'Dead Sea', 'Great Rift Valley', 'Arctic Circle',
+  'Ring of Fire', 'Pacific Ocean', 'Gulf Stream', 'Mariana Trench',
+  'Great Dividing Range', 'Panama Canal', 'Bermuda Triangle',
+  'Great Plains', 'Amazon Rainforest', 'Tibetan Plateau',
+  'Mid-Atlantic Ridge', 'Cape of Good Hope'
+],
+
+borders: [
+  'US-Mexico Border', 'Berlin Wall', 'Great Wall of China',
+  'Durand Line', '38th Parallel', 'Rio Grande', 'Pyrenees',
+  'Himalayas', 'Demilitarized Zone', 'Maginot Line',
+  'Green Line', 'Oder-Neisse Line', 'Radcliffe Line',
+  'Mason-Dixon Line', 'Iron Curtain', 'India-Pakistan Border',
+  'Canada-US Border', 'Korean DMZ', 'Schengen Area', 'Hadrian Wall'
+],
+
+landforms: [
+  'Mountain', 'Valley', 'Plateau', 'Plain', 'Canyon',
+  'Cliff', 'Cave', 'Delta', 'Dune', 'Ridge',
+  'Basin', 'Isthmus', 'Archipelago', 'Peninsula', 'Volcano',
+  'Escarpment', 'Butte', 'Mesa', 'Fjord', 'Atoll'
+],
+
+climate_regions: [
+  'Tropical', 'Mediterranean', 'Arid', 'Semi-arid', 'Temperate',
+  'Continental', 'Polar', 'Subarctic', 'Subtropical', 'Monsoon',
+  'Oceanic', 'Equatorial', 'Tundra', 'Highland', 'Desert',
+  'Savanna', 'Steppe', 'Humid Continental', 'Marine West Coast',
+  'Humid Subtropical'
+],
+
+biomes: [
+  'Rainforest', 'Savanna', 'Tundra', 'Taiga', 'Desert',
+  'Grassland', 'Temperate Forest', 'Tropical Forest', 'Chaparral',
+  'Wetland', 'Coral Reef', 'Mangrove', 'Alpine', 'Boreal Forest',
+  'Prairie', 'Steppe', 'Woodland', 'Estuary', 'Kelp Forest',
+  'Polar Ice'
+],
+
+time_zones: [
+  'UTC', 'GMT', 'AEST', 'ACST', 'AWST',
+  'AEDT', 'ACDT', 'PST', 'MST', 'CST',
+  'EST', 'EDT', 'CET', 'JST', 'IST',
+  'NZST', 'HST', 'EAT', 'BRT', 'Chatham Time'
+],
+
+islands_by_type: [
+  'Volcanic Island', 'Coral Island', 'Barrier Island',
+  'Continental Island', 'Oceanic Island', 'Tidal Island',
+  'Artificial Island', 'River Island', 'Fluvial Island',
+  'Atoll', 'Cay', 'Skerry', 'Faro', 'Archipelago',
+  'Seamount Island', 'Fringing Reef Island', 'Oceanic Atoll',
+  'Sandbar Island', 'Delta Island', 'Lava Island'
+],
+
+mountain_ranges: [
+  'Himalayas', 'Andes', 'Rocky Mountains', 'Alps', 'Appalachians',
+  'Atlas Mountains', 'Pyrenees', 'Urals', 'Carpathians', 'Caucasus',
+  'Great Dividing Range', 'Drakensberg', 'Zagros Mountains',
+  'Sierra Nevada', 'Alaska Range', 'Tian Shan', 'Karakoram',
+  'Hindu Kush', 'Southern Alps', 'Scandinavian Mountains'
+],
+
+rivers_by_continent: [
+  'Amazon', 'Nile', 'Yangtze', 'Mississippi', 'Danube',
+  'Ganges', 'Mekong', 'Volga', 'Congo', 'Murray',
+  'Rhine', 'Zambezi', 'Lena', 'Ob', 'Yukon',
+  'Colorado', 'Indus', 'Parana', 'Orange River', 'Brahmaputra'
+],
+
+deserts_by_continent: [
+  'Sahara', 'Gobi', 'Atacama', 'Kalahari', 'Namib',
+  'Arabian Desert', 'Mojave', 'Sonoran Desert', 'Thar Desert',
+  'Great Victoria Desert', 'Great Sandy Desert', 'Patagonian Desert',
+  'Syrian Desert', 'Taklamakan', 'Karakum', 'Kyzylkum',
+  'Great Basin Desert', 'Chihuahuan Desert', 'Simpson Desert',
+  'Antarctic Desert'
+],
+
+lakes_by_continent: [
+  'Lake Superior', 'Lake Victoria', 'Lake Baikal', 'Lake Tanganyika',
+  'Lake Michigan', 'Lake Titicaca', 'Lake Malawi', 'Lake Huron',
+  'Lake Ontario', 'Lake Erie', 'Caspian Sea', 'Aral Sea',
+  'Great Bear Lake', 'Great Slave Lake', 'Lake Chad',
+  'Lake Geneva', 'Lake Eyre', 'Lake Winnipeg', 'Lake Turkana',
+  'Lake Ladoga'
+],
+
+seas_and_gulfs: [
+  'Mediterranean Sea', 'Caribbean Sea', 'Red Sea', 'Black Sea',
+  'Baltic Sea', 'Arabian Sea', 'Coral Sea', 'Tasman Sea',
+  'South China Sea', 'Bering Sea', 'North Sea', 'Arafura Sea',
+  'Gulf of Mexico', 'Persian Gulf', 'Gulf of Aden',
+  'Gulf of California', 'Gulf of Bothnia', 'Gulf of Carpentaria',
+  'Sea of Japan', 'Andaman Sea'
+],
+
+straits_and_channels: [
+  'Strait of Gibraltar', 'Bering Strait', 'Strait of Malacca',
+  'English Channel', 'Mozambique Channel', 'Torres Strait',
+  'Strait of Hormuz', 'Dardanelles', 'Bosporus', 'Cook Strait',
+  'Dover Strait', 'Lombok Strait', 'Sunda Strait',
+  'Drake Passage', 'Magellan Strait', 'Bass Strait',
+  'Taiwan Strait', 'Bab-el-Mandeb', 'Palk Strait',
+  'North Channel'
+],
+
+peninsulas_and_capes: [
+  'Arabian Peninsula', 'Iberian Peninsula', 'Italian Peninsula',
+  'Balkan Peninsula', 'Scandinavian Peninsula', 'Korean Peninsula',
+  'Malay Peninsula', 'Yucatan Peninsula', 'Kamchatka Peninsula',
+  'Cape of Good Hope', 'Cape Horn', 'Cape York',
+  'Cape Leeuwin', 'Cape Cod', 'Cape Canaveral',
+  'Labrador Peninsula', 'Florida Peninsula', 'Sinai Peninsula',
+  'Indochinese Peninsula', 'Crimean Peninsula'
+],
+
+cities_by_population: [
+  'Tokyo', 'Delhi', 'Shanghai', 'Dhaka', 'Cairo',
+  'Mumbai', 'Beijing', 'Sao Paulo', 'Mexico City', 'Osaka',
+  'Karachi', 'Chongqing', 'Lagos', 'Istanbul', 'Kolkata',
+  'Manila', 'Buenos Aires', 'Kinshasa', 'Lahore', 'Seoul'
+],
+
+historic_cities: [
+  'Rome', 'Athens', 'Jerusalem', 'Babylon', 'Constantinople',
+  'Alexandria', 'Petra', 'Troy', 'Pompeii', 'Carthage',
+  'Persepolis', 'Angkor', 'Tenochtitlan', 'Machu Picchu',
+  'Samarkand', 'Kyoto', 'Damascus', 'Jericho', 'Memphis',
+  'Byzantium'
+],
+
+port_cities: [
+  'Singapore', 'Rotterdam', 'Shanghai', 'Sydney', 'Hamburg',
+  'Marseille', 'Venice', 'Dubai', 'Hong Kong', 'Antwerp',
+  'Auckland', 'Valparaiso', 'Alexandria', 'Mumbai', 'Durban',
+  'Liverpool', 'Vancouver', 'Osaka', 'Piraeus', 'Fremantle'
+],
+
+mountain_cities: [
+  'La Paz', 'Quito', 'Kathmandu', 'Thimphu', 'Lhasa',
+  'Cusco', 'Denver', 'Innsbruck', 'Interlaken', 'Shimla',
+  'Bogota', 'Addis Ababa', 'Mexico City', 'Sarajevo', 'Sofia',
+  'Tbilisi', 'Kabul', 'Boulder', 'Manali', 'Queenstown'
+],
   island_capitals: [],
   cities_with_canals: [],
   cities_known_for_architecture: [],
