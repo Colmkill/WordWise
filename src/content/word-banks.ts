@@ -258,7 +258,7 @@ export const WORD_BANKS: Record<string, string[]> = {
   leathercraft: ['burnisher', 'skiving', 'saddle soap', 'edge beveler', 'pricking iron', 'stitching pony', 'leather awl', 'slicker', 'tokonole', 'maul', 'creasing iron', 'edge kote'],
   beekeeping_products: ['beeswax', 'mead', 'royal jelly', 'bee bread', 'honeycomb', 'honeydew', 'bee venom', 'pollen pellet', 'wax foundation sheet', 'propolis tincture', 'honey liquor', 'comb honey'],
   calligraphy_technique: ['flourishing', 'ductus', 'ligature', 'nib angle', 'pen lift', 'hairline', 'swash', 'serif stroke', 'ascender loop', 'descender loop', 'ink trap', 'uncial'],
-  ancient_wonders: [],
+  ancient_wonders: ['pyramid', 'Giza', 'Colossus', 'Lighthouse', 'Pharos', 'Hanging Gardens', 'Babylon', 'Artemis', 'Mausoleum', 'Halicarnassus', 'Olympia', 'Zeus', 'sphinx', 'obelisk', 'ziggurat', 'amphitheatre', 'colonnade', 'sarcophagus', 'hieroglyph', 'monument'],
   modern_wonders: [],
   famous_palaces: [],
   famous_temples: [],
