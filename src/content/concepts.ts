@@ -837,7 +837,7 @@ export const TOPIC_CONCEPTS: Record<string, TopicConcept> = {
   types_of_artisan_tool: { slug: 'types_of_artisan_tool', category: 'TYPES_OF_ARTISAN_TOOL', hint: 'Hand tools used by skilled craftworkers.' },
   types_of_handicraft_technique: { slug: 'types_of_handicraft_technique', category: 'TYPES_OF_HANDICRAFT_TECHNIQUE', hint: 'Methods used in various traditional crafts.' },
   types_of_traditional_pattern: { slug: 'types_of_traditional_pattern', category: 'TYPES_OF_TRADITIONAL_PATTERN', hint: 'Decorative designs characteristic of different cultures.' },
-  types_of_folk_art: { slug: 'types_of_folk_art', category: 'TYPES_OF_FOLK_ART', hint: 'Artistic traditions practiced by communities.' }
+  types_of_folk_art: { slug: 'types_of_folk_art', category: 'TYPES_OF_FOLK_ART', hint: 'Artistic traditions practiced by communities.' },
   unusual_modern_occupations: { slug: 'unusual_modern_occupations', category: 'UNUSUAL_MODERN_OCCUPATIONS', hint: "Strange ways people earn a living today." },
   maritime_occupations: { slug: 'maritime_occupations', category: 'MARITIME_OCCUPATIONS', hint: "The crew roles that keep a ship working at sea." },
   railway_occupations: { slug: 'railway_occupations', category: 'RAILWAY_OCCUPATIONS', hint: "The people who keep the trains running on time." },

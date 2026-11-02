@@ -1012,7 +1012,7 @@ words_ending_in_y: ['happy', 'sunny', 'funny', 'windy', 'rainy', 'baby', 'story'
   types_of_artisan_tool: [],
   types_of_handicraft_technique: [],
   types_of_traditional_pattern: [],
-  types_of_folk_art: []
+  types_of_folk_art: [],
   unusual_modern_occupations: ['influencer', 'drone pilot', 'food stylist', 'voice-over artist', 'ethical hacker', 'professional cuddler', 'pet psychologist', 'golf ball diver', 'line sitter', 'professional organizer', 'odour judge', 'waterslide tester'],
   maritime_occupations: ['captain', 'sailor', 'deckhand', 'helmsman', 'boatswain', 'rigger', 'shipwright', 'navigator', 'quartermaster', 'harbourmaster', 'purser', 'diver'],
   railway_occupations: ['train driver', 'conductor', 'signalman', 'fireman', 'shunter', 'platelayer', 'stationmaster', 'pointsman', 'ganger', 'fitter', 'guard', 'porter'],
