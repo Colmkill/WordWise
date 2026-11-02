@@ -432,6 +432,25 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   royal_household_occupations: 3,
   traditional_ceremonial_occupations: 3,
   specialist_inspection_occupations: 4,
+  types_of_antique_furniture: 2, types_of_vintage_clothing: 2,
+  types_of_collectible_coin: 2, types_of_collectible_stamp: 2, types_of_rare_book: 3,
+  types_of_manuscript: 3, types_of_historical_document: 3, types_of_antique_map: 3,
+  types_of_antique_globe: 3, types_of_antique_clock: 2, types_of_antique_watch: 2,
+  types_of_vintage_camera: 2, types_of_antique_musical_instrument: 2,
+  types_of_antique_weapon: 2, types_of_antique_jewellery: 2, types_of_antique_toy: 2,
+  types_of_antique_doll: 2, types_of_antique_glassware: 2, types_of_antique_porcelain: 2,
+  types_of_antique_silverware: 2, types_of_collectible_figures: 2,
+  types_of_collectible_card: 2, types_of_miniature: 2, types_of_model_kit: 2,
+  types_of_rare_postcard: 2, types_of_rare_photograph: 3, types_of_antique_textile: 3,
+  types_of_antique_tapestry: 3, types_of_antique_rug: 2, types_of_antique_quilt: 2,
+  types_of_collectible_bottle: 2, types_of_collectible_jar: 2, types_of_rare_mineral: 3,
+  types_of_rare_fossil: 3, types_of_unusual_rock_formation: 2,
+  types_of_geological_specimen: 2, types_of_botanical_specimen: 2,
+  types_of_pressed_flower: 2, types_of_herbarium_sheet: 3,
+  types_of_antique_scientific_instrument: 3, types_of_antique_medical_equipment: 3,
+  types_of_antique_navigation_tool: 3, types_of_antique_writing_instrument: 2,
+  types_of_unusual_household_object: 2, types_of_obsolete_technology: 2,
+  types_of_vintage_advertising: 2, types_of_collectible_packaging: 2
 
 };
 
