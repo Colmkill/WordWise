@@ -469,7 +469,29 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   types_of_goal_setting_method: 2, types_of_time_management_method: 2,
   types_of_organizational_method: 2, types_of_study_technique: 2,
   types_of_note_taking_method: 2, types_of_reading_strategy: 2,
-  types_of_listening_skill: 2, types_of_communication_barrier: 2
+  types_of_listening_skill: 2, types_of_communication_barrier: 2,
+  literary_genres: 2, fictional_character_archetypes: 2, hero_archetypes: 2,
+  villain_archetypes: 2, fictional_character_motivations: 2, common_story_structures: 2,
+  narrative_perspectives: 2, plot_devices: 2, literary_themes: 2,
+  literary_symbolism: 3, literary_movements: 3, types_of_narrator: 2,
+  types_of_conflict_in_fiction: 2, types_of_fictional_setting: 2,
+  types_of_fictional_society: 2, types_of_fictional_government: 2,
+  types_of_fictional_technology: 2, types_of_fictional_transport: 2,
+  types_of_fictional_weapon: 2, types_of_fictional_creature: 2,
+  types_of_fictional_power: 2, types_of_fictional_curse: 2,
+  types_of_fictional_prophecy: 2, types_of_fictional_quest: 2,
+  types_of_fictional_mystery: 2, types_of_fictional_detective: 2,
+  types_of_fictional_clue: 2, types_of_unreliable_narrator: 3,
+  types_of_dramatic_irony: 3, types_of_literary_allusion: 3,
+  famous_fictional_cities: 2, famous_fictional_islands: 2,
+  famous_fictional_kingdoms: 2, famous_fictional_schools: 2,
+  famous_fictional_inventions: 2, famous_fictional_organisations: 2,
+  famous_fictional_sidekicks: 2, famous_fictional_mentors: 2,
+  famous_fictional_disguises: 2, famous_fictional_disguises_and_identities: 2,
+  famous_literary_rivalries: 3, famous_fictional_journeys: 2,
+  famous_literary_opening_techniques: 3, famous_endings_in_literature: 2,
+  storytelling_traditions_by_culture: 3, oral_storytelling_forms: 2,
+  types_of_traditional_tale: 2
 
 };
 
