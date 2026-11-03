@@ -450,7 +450,26 @@ export const CONCEPT_DIFFICULTY: Record<string, number> = {
   types_of_antique_scientific_instrument: 3, types_of_antique_medical_equipment: 3,
   types_of_antique_navigation_tool: 3, types_of_antique_writing_instrument: 2,
   types_of_unusual_household_object: 2, types_of_obsolete_technology: 2,
-  types_of_vintage_advertising: 2, types_of_collectible_packaging: 2
+  types_of_vintage_advertising: 2, types_of_collectible_packaging: 2,
+  types_of_emotion: 2, types_of_personality_trait: 2, types_of_virtue: 2,
+  types_of_vice: 2, types_of_philosophical_concept: 3, types_of_ethical_dilemma: 3,
+  types_of_logical_fallacy: 3, types_of_argument: 2, types_of_belief_system: 3,
+  types_of_worldview: 3, types_of_spiritual_tradition: 2, types_of_meditation_practice: 2,
+  types_of_mindfulness_technique: 2, types_of_moral_philosophy: 3,
+  types_of_political_philosophy: 3, types_of_aesthetic_philosophy: 3,
+  types_of_existential_question: 3, types_of_metaphysical_concept: 3,
+  types_of_epistemological_concept: 3, types_of_ontological_concept: 3,
+  types_of_philosophical_argument: 3, types_of_thought_experiment: 3,
+  types_of_paradox: 2, types_of_cognitive_bias: 2, types_of_reasoning_error: 2,
+  types_of_decision_making_strategy: 2, types_of_problem_solving_approach: 2,
+  types_of_creativity_technique: 2, types_of_learning_style: 2,
+  types_of_memory_technique: 2, types_of_concentration_technique: 2,
+  types_of_relaxation_technique: 2, types_of_stress_management_technique: 2,
+  types_of_coping_strategy: 2, types_of_motivational_technique: 2,
+  types_of_goal_setting_method: 2, types_of_time_management_method: 2,
+  types_of_organizational_method: 2, types_of_study_technique: 2,
+  types_of_note_taking_method: 2, types_of_reading_strategy: 2,
+  types_of_listening_skill: 2, types_of_communication_barrier: 2
 
 };
 
